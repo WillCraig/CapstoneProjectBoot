@@ -1,6 +1,8 @@
-# Lab 49 starter — session block (~45 minutes)
+The Lab 49 code already lives in this repo under `backend/`. Nothing to copy; work on a branch off `main`.
 
-**Theme:** Capstone backend interaction slice (service stub package)
+# Lab 49 — backend interaction slice (~45 minutes)
+
+**Theme:** Capstone backend interaction slice
 
 ## Activity card
 
@@ -10,34 +12,9 @@
 | **Must prove** | service TODOs · compile · CUS-1001 fixtures · event V1 sketch |
 | **Hard gate** | Pre-lab Pass · Lab 48 story |
 
-**Target:** `%USERPROFILE%\java-bootcamp\examples\lab49-crm` (macOS: `~/java-bootcamp/examples/lab49-crm`)
-
-Timed-path policy: [`labs/_STARTER-PATH.md`](../../../../_STARTER-PATH.md)
-
-Capstone teams with an existing `customer-management-platform` monorepo may copy only `backend/` into that repo.
-
-## Copy into your workspace
-
-**Windows (PowerShell)** — from this lab folder:
-
-```powershell
-$dest = "$env:USERPROFILE\java-bootcamp\examples\lab49-crm"
-New-Item -ItemType Directory -Force -Path "$dest" | Out-Null
-Copy-Item -Recurse -Force ".\starter\*" $dest\
-cd $dest
-```
-
-**macOS / Linux:**
-
-```bash
-mkdir -p ~/java-bootcamp/examples/lab49-crm
-cp -R starter/. ~/java-bootcamp/examples/lab49-crm/
-cd ~/java-bootcamp/examples/lab49-crm
-```
-
 ## 45-minute session checklist
 
-- [ ] Open starter under IntelliJ; JDK 21 SDK
+- [ ] Open `backend/` in IntelliJ with the JDK 21 SDK
 - [ ] Fill `// TODO` in `InteractionService` (validate customer, persist, publish)
 - [ ] Fill `CreateInteractionRequest` validation annotations
 - [ ] Wire controller → service; return 201 shape for `CUS-1001`
@@ -46,14 +23,12 @@ cd ~/java-bootcamp/examples/lab49-crm
 
 ## Build / smoke checklist
 
-```powershell
+```bash
 cd backend
 mvn -B test
 ```
 
 Expect failures until TODOs are filled, then both `InteractionServiceTest` methods green. Angular UI is Lab 50 — do not start it here.
-
-Evidence under `~/java-bootcamp/notes/lab-49/`.
 
 ## Timed-path Pass criteria
 
@@ -64,7 +39,7 @@ Evidence under `~/java-bootcamp/notes/lab-49/`.
 | At least one unit test for create-interaction path green (or documented baseline) | Pass / Fail |
 | Fixtures `CUS-1001` / `lab-request-001` appear in code or test | Pass / Fail |
 
-Full path (multi-day): Flyway migration, Kafka IT, Problem Details, consumer/DLT, `docs/backend-demo.md` — see GUIDE.
+Full path (multi-day): Flyway migration, Kafka IT, Problem Details, consumer/DLT, [`backend-demo.md`](backend-demo.md) — see the Lab 49 GUIDE.
 
 ### Troubleshooting
 
@@ -72,5 +47,5 @@ Full path (multi-day): Flyway migration, Kafka IT, Problem Details, consumer/DLT
 | --- | --- |
 | UnsupportedOperationException left | Fill InteractionService TODOs |
 | Validation missing | Annotate CreateInteractionRequest |
-| Wrong module path | Copy into `examples/lab49-crm` |
+| Wrong module path | Run Maven from `backend/` (or `mvn -f backend/pom.xml`) |
 | Tests red until TODOs | Expected; then green session tests |

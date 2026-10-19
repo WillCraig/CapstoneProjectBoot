@@ -1,56 +1,85 @@
-# Lab 48 starter — timed path (~45 minutes)
+# CapstoneProjectBoot — Northstar CRM
 
-**Theme:** Capstone architecture + delivery planning pack (no feature coding)
+Our Week 6 capstone: a small customer management platform for Northstar. Agents sign in, look up a customer, and record interactions (calls, emails, notes) against them. The record is saved in PostgreSQL first, then a `CustomerInteractionRecordedV1` event goes out on Kafka.
 
-## Activity card
+## Stack
 
-| | |
+| Layer | What we use |
 | --- | --- |
-| **Checkpoint** | **E** |
-| **Must prove** | Stack diagram · AI plan outline · Actions gates · env strategy · CAP-12 seed |
-| **Hard gate** | Pre-lab Pass · docs-first before Lab 49 |
+| Frontend | Angular 19 (`frontend/`) |
+| API | REST, documented with OpenAPI |
+| Backend | Spring Boot 3.3, Java 21 (`backend/`, package `com.northstar.crm`) |
+| Database | PostgreSQL 16, schema managed by Flyway |
+| Events | Kafka, topic `crm.customer.interactions.v1` |
+| CI/CD | GitHub Actions |
+| Containers | Docker, Docker Compose for local dev |
+| Deploy | Shared k3s cluster |
+| Infra | Terraform and Ansible |
 
-## Copy into your workspace
+## Run it locally
 
-**Windows (PowerShell)** — from this lab folder:
-
-```powershell
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\java-bootcamp\examples\lab48-capstone-plan" | Out-Null
-Copy-Item -Recurse -Force ".\starter\*" "$env:USERPROFILE\java-bootcamp\examples\lab48-capstone-plan\"
-cd $env:USERPROFILE\java-bootcamp\examples\lab48-capstone-plan
-```
-
-**macOS / Linux:**
+You need Docker, JDK 21, Maven, and Node 20+.
 
 ```bash
-mkdir -p ~/java-bootcamp/examples/lab48-capstone-plan
-cp -R starter/. ~/java-bootcamp/examples/lab48-capstone-plan/
-cd ~/java-bootcamp/examples/lab48-capstone-plan
+cp .env.example .env          # local only, never commit .env
+docker compose up -d          # Postgres 16 + single-node Kafka
 ```
 
-## 45-minute checklist
+Backend (first terminal):
 
-- [ ] Complete TODOs in `docs/architecture.md` (Angular → REST → Boot → PostgreSQL; Kafka; OpenShift)
-- [ ] Outline `docs/ai-usage-plan.md` and `docs/github-actions-plan.md`
-- [ ] Sketch `docs/environment-strategy.md` + Terraform/Ansible bullets
-- [ ] Seed `docs/backlog.md` with CAP-12 acceptance
-- [ ] Export/screenshot one diagram to `notes/lab-48/`
-
-## Smoke test
-
-```powershell
-# From lab48-capstone-plan — files exist and mention PostgreSQL + GitHub Actions + Angular
-Get-ChildItem docs
-Select-String -Path docs\*.md -Pattern 'PostgreSQL|Angular|GitHub Actions|OpenShift'
+```bash
+cd backend
+mvn verify                    # some tests fail on purpose until the service TODOs are done
+mvn spring-boot:run           # API on http://localhost:8080
 ```
 
-## Timed-path Pass criteria
+Frontend (second terminal):
 
-| Criterion | Pass / Fail |
-| --------- | ----------- |
-| Architecture uses mandatory stack (no Oracle/React/Bitbucket/SOAP path) | Pass / Fail |
-| CAP-12 backlog seed present | Pass / Fail |
-| Actions plan mentions Angular build/test | Pass / Fail |
-| AI plan has verification + forbids | Pass / Fail |
+```bash
+cd frontend
+npm ci
+npx ng serve                  # UI on http://localhost:4200
+```
 
-Continue remaining GUIDE steps as homework.
+Open http://localhost:4200, click **Mock login**, and search for a customer.
+
+Test data:
+
+| Customer id | Who |
+| --- | --- |
+| `CUS-1001` | Amina Khan |
+| `CUS-1002` | Ravi Singh |
+| `CUS-9999` | Doesn't exist, should come back 404 |
+
+The API lives under `/api/v1/interactions`. For now it accepts a demo bearer token (`lab-demo-token`); real JWT checks replace that in Lab 51. Default correlation id is `lab-request-001`.
+
+To stop everything: `docker compose down` (add `-v` to wipe the database).
+
+## Repo layout
+
+```text
+backend/     Spring Boot API, JPA entities, Flyway migrations, Kafka publisher
+frontend/    Angular app: login, interceptors, interaction screens
+docs/        Architecture, ADRs, plans, backlog, lab notes
+defense/     Lab 52 demo and defense packet
+compose.yaml Local Postgres + Kafka
+```
+
+## Docs
+
+- [docs/](docs/) — planning pack and lab notes
+  - [Architecture](docs/architecture.md)
+  - [AI usage plan](docs/ai-usage-plan.md)
+  - [Environment strategy](docs/environment-strategy.md)
+  - [GitHub Actions plan](docs/github-actions-plan.md)
+  - [Terraform / Ansible plan](docs/terraform-ansible-plan.md)
+  - [Backlog](docs/backlog.md)
+  - [Lab 49 backend notes](docs/lab49/README.md) · [Lab 50 frontend + persistence notes](docs/lab50/README.md)
+- [defense/](defense/) — Lab 52 presentation packet
+- [CAPSTONE-BRIEF-AND-RUBRIC.md](CAPSTONE-BRIEF-AND-RUBRIC.md) — the course brief and self-check rubric
+
+## Working in this repo
+
+- Branch off `main`, one issue per branch, PR back into `main` with one non-author review.
+- Diagrams are Mermaid in the markdown, not image exports.
+- Secrets stay out of git. `.env` is ignored; only `.env.example` is committed.
