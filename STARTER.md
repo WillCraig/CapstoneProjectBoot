@@ -32,7 +32,7 @@ Package `com.northstar.crm`. Test customers: Amina Khan `CUS-1001`, Ravi Singh `
 
 **Lab 51 (security + delivery)**
 - Replace the demo bearer filter with real JWT checks and role rules.
-- GitHub Actions pipeline, Docker images, OpenShift deploy and rollback.
+- GitHub Actions pipeline, Docker images, k3s deploy and rollback.
 
 `InteractionServiceTest` and `InteractionApiIT` **fail on purpose** until the service TODOs are done.
 
