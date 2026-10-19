@@ -34,35 +34,29 @@ GitHub → Actions (test, scan, build) → image digest → shared k3s. The deli
 
 ## Application path
 
+Left to right: browser app calls the API; the API saves to the database, then may publish an event.
+
 ```mermaid
 flowchart LR
-  UI["Angular SPA"] -->|"REST + JWT"| API["Spring Boot"]
-  API --> PG[("PostgreSQL")]
-  API -.->|"publish after commit"| K[["Kafka"]]
+  A[Angular] -->|REST with JWT| B[Spring Boot]
+  B --> C[(PostgreSQL)]
+  B -->|after save| D[Kafka]
 ```
 
 ## JWT interceptor and customer fixtures
 
-Angular holds the JWT in memory after sign-in. An HTTP interceptor adds `Authorization: Bearer <token>` (and a correlation id) on every API call. Spring Security on the API is the real gate: missing or bad token → 401; wrong role → 403. The interceptor is for UX, not the security boundary.
+After sign-in, Angular keeps the JWT in memory and an HTTP interceptor sticks `Authorization: Bearer …` (plus a correlation id) on each API call. Spring Security on the server is the real gate (bad token → 401, wrong role → 403). The interceptor is only for convenience.
+
+Same call path for every customer id. Known customers succeed; the missing one does not.
 
 ```mermaid
-sequenceDiagram
-  participant Agent
-  participant UI as Angular interceptor
-  participant API as Spring Boot API
-  participant PG as PostgreSQL
-
-  Agent->>UI: Sign in (JWT kept in memory)
-  Agent->>UI: List or record for CUS-1001 (Amina)
-  UI->>API: REST + Bearer JWT + correlation id
-  API->>PG: Load customer / save interaction
-  API-->>UI: 200 or 201
-  Agent->>UI: Same path for CUS-1002 (Ravi)
-  UI->>API: REST + Bearer JWT
-  API-->>UI: 200 or 201
-  Agent->>UI: Request for CUS-9999
-  UI->>API: REST + Bearer JWT
-  API-->>UI: 404 (no row, no Kafka event)
+flowchart TD
+  A[Agent uses Angular] --> B[Interceptor adds JWT]
+  B --> C[Spring Boot API]
+  C --> D{Customer id?}
+  D -->|CUS-1001 Amina or CUS-1002 Ravi| E[Save in PostgreSQL then optional Kafka]
+  E --> F[200 or 201]
+  D -->|CUS-9999| G[404 — no row, no event]
 ```
 
 ## Architecture decisions
