@@ -11,10 +11,17 @@ public class InteractionEventPublisher {
    */
   public void publish(Interaction interaction) {
     // TODO: build CustomerInteractionRecordedV1 and publish to Kafka
-    System.out.println(
-        "TODO publish event for customer="
-            + interaction.getCustomerId()
-            + " correlation="
-            + interaction.getCorrelationId());
+    CustomerInteractionRecordedV1 event =
+        new CustomerInteractionRecordedV1(
+            CustomerInteractionRecordedV1.TYPE,
+            CustomerInteractionRecordedV1.VERSION,
+            interaction.getId(),
+            interaction.getCustomerId(),
+            interaction.getInteractionType(),
+            interaction.getCorrelationId(),
+            interaction.getCreatedAt());
+    kafkaTemplate.send("crm.customer.interactions.v1", interaction.getCustomerId(), event);
+
+    //System.out.println("TODO publish event for customer=" + interaction.getCustomerId() + " correlation=" + interaction.getCorrelationId());
   }
 }
