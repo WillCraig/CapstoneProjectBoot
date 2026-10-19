@@ -2,8 +2,6 @@
 
 Our Week 6 capstone: a small customer management platform for Northstar. Agents sign in, look up a customer, and record interactions (calls, emails, notes) against them. The record is saved in PostgreSQL first, then a `CustomerInteractionRecordedV1` event goes out on Kafka.
 
-One repo for the whole week. Labs 49–52 build on the same code instead of starting over each day. See [STARTER.md](STARTER.md) for where each piece came from and what's still a TODO.
-
 ## Stack
 
 | Layer | What we use |
@@ -17,8 +15,6 @@ One repo for the whole week. Labs 49–52 build on the same code instead of star
 | Containers | Docker, Docker Compose for local dev |
 | Deploy | Shared k3s cluster |
 | Infra | Terraform and Ansible |
-
-Not on our path: React, SOAP, Oracle, Bitbucket Pipelines, OpenShift.
 
 ## Run it locally
 
