@@ -86,7 +86,7 @@ jobs:
       # starter dependency set, so this job publishes evidence without blocking
       # Lab 51 delivery yet. The runbook records that residual risk explicitly.
       - name: Scan repository with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           scan-type: fs
           scan-ref: .
@@ -159,7 +159,7 @@ jobs:
             ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-frontend:${{ github.sha }}
 
       - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: northstar-crm-backend:${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -169,7 +169,7 @@ jobs:
           exit-code: "0"
 
       - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: northstar-crm-frontend:${{ github.sha }}
           severity: HIGH,CRITICAL
