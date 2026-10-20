@@ -66,6 +66,29 @@ jobs:
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2
 
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Set up Python for Ansible
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate Terraform and Ansible promotion inputs
+        shell: bash
+        env:
+          CRM_TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          CRM_BACKEND_DIGEST: ${{ inputs.backend_digest }}
+          CRM_FRONTEND_DIGEST: ${{ inputs.frontend_digest }}
+        run: |
+          set -euo pipefail
+          terraform fmt -check -recursive infra/terraform
+          terraform -chdir=infra/terraform init -backend=false -input=false
+          terraform -chdir=infra/terraform validate
+          python -m pip install --disable-pip-version-check ansible-core
+          ansible-playbook -i localhost, infra/ansible/site.yml --syntax-check
+          ansible-playbook -i localhost, infra/ansible/site.yml
+
       - name: Validate promotion inputs
         shell: bash
         run: |
@@ -166,6 +189,15 @@ jobs:
           printf '%s' "$KUBECONFIG_B64" | base64 --decode > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
           kubectl config current-context >/dev/null
+
+      - name: Plan Terraform without applying
+        if: inputs.dry_run == false
+        shell: bash
+        run: |
+          terraform -chdir=infra/terraform plan \
+            -input=false \
+            -lock=false \
+            -var="manage_namespaces=false"
 
       - name: Create or update runtime Secret
         if: inputs.dry_run == false

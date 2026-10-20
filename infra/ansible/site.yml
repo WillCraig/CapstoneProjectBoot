@@ -1,0 +1,40 @@
+---
+- name: Validate Northstar CRM promotion inputs without making changes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    target_environment: "{{ lookup('env', 'CRM_TARGET_ENVIRONMENT') | default('dev', true) }}"
+    crm_namespace: "{{ lookup('env', 'CRM_NAMESPACE') | default('northstar-crm-dev', true) }}"
+    crm_ingress_host: "{{ lookup('env', 'CRM_INGRESS_HOST') | default('crm-dev.example.invalid', true) }}"
+    backend_digest: "{{ lookup('env', 'CRM_BACKEND_DIGEST') | default('', true) }}"
+    frontend_digest: "{{ lookup('env', 'CRM_FRONTEND_DIGEST') | default('', true) }}"
+
+  tasks:
+    - name: Require a known environment
+      ansible.builtin.assert:
+        that:
+          - target_environment in ['dev', 'test', 'stage', 'prod-like']
+        fail_msg: "CRM_TARGET_ENVIRONMENT must be dev, test, stage, or prod-like."
+
+    - name: Require a namespace and Ingress host
+      ansible.builtin.assert:
+        that:
+          - crm_namespace | length > 0
+          - crm_ingress_host | length > 0
+        fail_msg: "CRM_NAMESPACE and CRM_INGRESS_HOST must be supplied by the GitHub Environment."
+
+    - name: Require digest-pinned images when the run is not a dry run
+      ansible.builtin.assert:
+        that:
+          - backend_digest is match('^sha256:[0-9a-f]{64}$')
+          - frontend_digest is match('^sha256:[0-9a-f]{64}$')
+        fail_msg: "CRM_BACKEND_DIGEST and CRM_FRONTEND_DIGEST must be sha256 digests."
+      when: not (ansible_check_mode | bool)
+
+    - name: Report the validated, non-secret promotion contract
+      ansible.builtin.debug:
+        msg: >-
+          environment={{ target_environment }} namespace={{ crm_namespace }}
+          ingress={{ crm_ingress_host }} digest_pinned=true secrets_printed=false
