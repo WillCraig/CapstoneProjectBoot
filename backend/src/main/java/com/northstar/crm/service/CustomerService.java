@@ -1,58 +1,47 @@
 package com.northstar.crm.service;
 
-import com.northstar.crm.api.dto.CustomerResponse;
-import com.northstar.crm.api.dto.SaveCustomerRequest;
 import com.northstar.crm.domain.CustomerEntity;
 import com.northstar.crm.repo.CustomerRepository;
-import java.util.List;
-import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 public class CustomerService {
+    private final CustomerRepository customerRepository;
+    public CustomerService(CustomerRepository customerRepository) {
+        this.customerRepository = customerRepository;
+    }
 
-  private final CustomerRepository customerRepository;
+    @Transactional(readOnly = true)
+    public List<CustomerEntity> listCustomers() {
+        return customerRepository.findAllByOrderByIdAsc();
+    }
 
-  public CustomerService(CustomerRepository customerRepository) {
-    this.customerRepository = customerRepository;
-  }
+    @Transactional
+    public CustomerEntity createCustomer(CustomerRequest request) {
+        CustomerEntity customer = new CustomerEntity();
+        customer.setPublicId("CUS-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase());
+        customer.setFullName(request.fullName());
+        customer.setStatus(request.status());
+        return customerRepository.save(customer);
+    }
 
-  @Transactional(readOnly = true)
-  public List<CustomerResponse> list() {
-    return customerRepository.findAllByOrderByIdAsc().stream().map(this::toResponse).toList();
-  }
+    @Transactional
+    public CustomerEntity updateCustomer(String publicId, CustomerRequest request) {
+        CustomerEntity customer =
+                customerRepository
+                        .findByPublicId(publicId)
+                        .orElseThrow(
+                                () -> new UnknownCustomerException("Unknown customer: " + publicId));
+        customer.setFullName(request.fullName());
+        customer.setStatus(request.status());
+        return customerRepository.save(customer);
+    }
 
-  @Transactional(readOnly = true)
-  public CustomerResponse get(String publicId) {
-    return customerRepository
-        .findByPublicId(publicId)
-        .map(this::toResponse)
-        .orElseThrow(() -> new UnknownCustomerException("Unknown customer: " + publicId));
-  }
-
-  @Transactional
-  public CustomerResponse create(SaveCustomerRequest request) {
-    CustomerEntity customer = new CustomerEntity();
-    customer.setPublicId(
-        "CUS-" + UUID.randomUUID().toString().replace("-", "").substring(0, 28).toUpperCase());
-    customer.setFullName(request.fullName().trim());
-    customer.setStatus(request.status());
-    return toResponse(customerRepository.save(customer));
-  }
-
-  @Transactional
-  public CustomerResponse update(String publicId, SaveCustomerRequest request) {
-    CustomerEntity customer =
-        customerRepository
-            .findByPublicId(publicId)
-            .orElseThrow(() -> new UnknownCustomerException("Unknown customer: " + publicId));
-    customer.setFullName(request.fullName().trim());
-    customer.setStatus(request.status());
-    return toResponse(customerRepository.save(customer));
-  }
-
-  private CustomerResponse toResponse(CustomerEntity customer) {
-    return new CustomerResponse(customer.getPublicId(), customer.getFullName(), customer.getStatus());
-  }
+    public record CustomerRequest(String fullName, String status) {
+    }
 }
+

@@ -1,26 +1,16 @@
 package com.northstar.crm.api;
 
-import com.northstar.crm.api.dto.CustomerResponse;
-import com.northstar.crm.api.dto.SaveCustomerRequest;
+import com.northstar.crm.domain.CustomerEntity;
 import com.northstar.crm.service.CustomerService;
-import java.util.List;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 
 @RestController
-@RequestMapping("/api/v1/customers")
-@CrossOrigin(
-    origins = "http://localhost:4200",
-    allowedHeaders = {"Authorization", "Content-Type"})
+@RequestMapping("/customers")
 public class CustomerController {
 
   private final CustomerService customerService;
@@ -31,22 +21,25 @@ public class CustomerController {
 
   @GetMapping
   public List<CustomerResponse> list() {
-    return customerService.list();
-  }
-
-  @GetMapping("/{publicId}")
-  public CustomerResponse get(@PathVariable String publicId) {
-    return customerService.get(publicId);
+  return customerService.listCustomers().stream()
+          .map(c -> new CustomerResponse(c.getPublicId(), c.getFullName(), c.getStatus()))
+                  .toList();
   }
 
   @PostMapping
-  public ResponseEntity<CustomerResponse> create(@Valid @RequestBody SaveCustomerRequest request) {
-    return ResponseEntity.status(HttpStatus.CREATED).body(customerService.create(request));
+  public ResponseEntity<CustomerResponse> create(@RequestBody CustomerService.CustomerRequest request) {
+    CustomerEntity customer = customerService.createCustomer(request);
+    CustomerResponse response = new CustomerResponse(customer.getPublicId(), customer.getFullName(), customer.getStatus());
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   @PutMapping("/{publicId}")
   public CustomerResponse update(
-      @PathVariable String publicId, @Valid @RequestBody SaveCustomerRequest request) {
-    return customerService.update(publicId, request);
-  }
+          @PathVariable String publicId,
+          @RequestBody CustomerService.CustomerRequest request) {
+        CustomerEntity updatedCustomer = customerService.updateCustomer(publicId, request);
+        return new CustomerResponse(updatedCustomer.getPublicId(), updatedCustomer.getFullName(), updatedCustomer.getStatus());
+    }
+
+public record CustomerResponse(String customerId, String fullName, String status) {}
 }
