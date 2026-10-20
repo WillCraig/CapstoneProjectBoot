@@ -2,10 +2,13 @@ package com.northstar.crm.service;
 
 import com.northstar.crm.api.dto.CreateInteractionRequest;
 import com.northstar.crm.api.dto.InteractionResponse;
+import com.northstar.crm.domain.InteractionEntity;
 import com.northstar.crm.messaging.InteractionEventPublisher;
 import com.northstar.crm.repo.CustomerRepository;
 import com.northstar.crm.repo.InteractionRepository;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,23 +32,53 @@ public class InteractionService {
 
   @Transactional(readOnly = true)
   public List<InteractionResponse> list(String customerId) {
-    // TODO 1: reject unknown customer (CUS-9999 / missing) - throw UnknownCustomerException
-    // TODO 2: load interactions for the public id, newest first
-    //         (interactionRepository.findByCustomer_PublicIdOrderByCreatedAtDesc)
-    // TODO 3: map each entity to InteractionResponse (never return the entity)
-    throw new UnsupportedOperationException("TODO: implement InteractionService.list");
+    customerRepository
+        .findByPublicId(customerId)
+        .orElseThrow(() -> new UnknownCustomerException(customerId));
+    return interactionRepository.findByCustomer_PublicIdOrderByCreatedAtDesc(customerId).stream()
+        .map(InteractionService::toResponse)
+        .toList();
   }
 
   @Transactional
   public InteractionResponse create(CreateInteractionRequest request, String correlationHeader) {
-    // TODO 1: resolve correlationId (header > request > DEFAULT_CORRELATION "lab-request-001")
-    // TODO 2: look up the customer by public id (e.g. CUS-1001); unknown (CUS-9999 / missing)
-    //         -> throw UnknownCustomerException
-    // TODO 3: map request -> InteractionEntity (new UUID id, customer, type, summary,
-    //         correlationId, createdAt = Instant.now())
-    // TODO 4: save via interactionRepository
-    // TODO 5: publish CustomerInteractionRecordedV1 via eventPublisher.publish(saved)
-    // TODO 6: return InteractionResponse (the DTO, not the entity)
-    throw new UnsupportedOperationException("TODO: implement InteractionService.create");
+    String correlationId = resolveCorrelationId(correlationHeader, request.correlationId());
+    var customer =
+        customerRepository
+            .findByPublicId(request.customerId())
+            .orElseThrow(() -> new UnknownCustomerException(request.customerId()));
+
+    InteractionEntity entity = new InteractionEntity();
+    entity.setId(UUID.randomUUID());
+    entity.setCustomer(customer);
+    entity.setInteractionType(request.interactionType());
+    entity.setSummary(request.summary());
+    entity.setCorrelationId(correlationId);
+    entity.setCreatedAt(Instant.now());
+
+    InteractionEntity saved = interactionRepository.save(entity);
+    // Publisher defers the Kafka send until this transaction commits (see docs/architecture.md).
+    eventPublisher.publish(saved);
+    return toResponse(saved);
+  }
+
+  static String resolveCorrelationId(String correlationHeader, String requestCorrelationId) {
+    if (correlationHeader != null && !correlationHeader.isBlank()) {
+      return correlationHeader;
+    }
+    if (requestCorrelationId != null && !requestCorrelationId.isBlank()) {
+      return requestCorrelationId;
+    }
+    return DEFAULT_CORRELATION;
+  }
+
+  private static InteractionResponse toResponse(InteractionEntity entity) {
+    return new InteractionResponse(
+        entity.getId(),
+        entity.getCustomer().getPublicId(),
+        entity.getInteractionType(),
+        entity.getSummary(),
+        entity.getCorrelationId(),
+        entity.getCreatedAt());
   }
 }
