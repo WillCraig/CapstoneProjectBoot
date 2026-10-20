@@ -51,6 +51,22 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Lab 49 integration tests: real PostgreSQL + Kafka, no local Compose ports needed. -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>kafka</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -66,6 +82,11 @@
             <include>**/*Test.java</include>
             <include>**/*IT.java</include>
           </includes>
+          <!-- Testcontainers' Docker client defaults to API 1.32, which current Docker
+               engines reject ("Minimum supported API version is 1.40"). Pin 1.41. -->
+          <systemPropertyVariables>
+            <api.version>1.41</api.version>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>

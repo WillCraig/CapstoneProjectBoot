@@ -41,7 +41,7 @@ Demo evidence checklist (definition of done):
 - [ ] SQL proof the row exists in PostgreSQL
 - [ ] Kafka proof: one V1 event per successful create, keyed by `CUS-1001`
 - [x] Unit tests: service create/list, correlation precedence, no publish on not-found, publisher waits for after-commit
-- [ ] HTTP / persistence / messaging integration tests
+- [x] HTTP / persistence / messaging integration tests (Testcontainers: real PostgreSQL + Kafka; Kafka IT asserts the V1 payload, key, and that the summary never appears)
 - [ ] `mvn -B clean verify` green twice with identical results
 - [ ] No secrets, `target/`, or broker data committed
 
@@ -81,10 +81,22 @@ The event never carries the interaction summary.
 
 ```bash
 cd backend
-mvn -B -Dtest=InteractionServiceTest,InteractionEventPublisherTest test
+mvn -B clean verify   # 23 tests: 16 unit/MockMvc + 7 Testcontainers ITs, BUILD SUCCESS
 ```
 
-Full `mvn -B clean verify` evidence lands with the test-complete slice.
+The integration tests start their own PostgreSQL 16 and Kafka containers, so
+no local Compose ports are needed. On this machine Docker runs under Colima,
+which Testcontainers does not auto-detect — export these first:
+
+```bash
+export DOCKER_HOST=unix://$HOME/.colima/default/docker.sock
+export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
+```
+
+(Docker Desktop / Linux need neither. The pom pins Docker API `1.41` because
+Testcontainers' client defaults to 1.32, which current Docker engines reject.)
+
+Run-verify-twice evidence lands with the failure-experiments slice.
 
 ## Remaining Lab 49 slices
 
