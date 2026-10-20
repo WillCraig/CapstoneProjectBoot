@@ -110,8 +110,16 @@ jobs:
     name: Container images (build, scan, and digest)
     needs: [frontend, backend, security-scan]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Derive lowercase GHCR owner
+        id: registry
+        shell: bash
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
       - name: Download verified frontend bundle
         uses: actions/download-artifact@v4
@@ -135,7 +143,9 @@ jobs:
           file: backend/Dockerfile
           load: true
           push: false
-          tags: northstar-crm-backend:${{ github.sha }}
+          tags: |
+            northstar-crm-backend:${{ github.sha }}
+            ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-backend:${{ github.sha }}
 
       - name: Build frontend image from verified bundle
         uses: docker/build-push-action@v6
@@ -144,7 +154,9 @@ jobs:
           file: frontend/Dockerfile
           load: true
           push: false
-          tags: northstar-crm-frontend:${{ github.sha }}
+          tags: |
+            northstar-crm-frontend:${{ github.sha }}
+            ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-frontend:${{ github.sha }}
 
       - name: Scan backend image with Trivy
         uses: aquasecurity/trivy-action@0.28.0
@@ -177,16 +189,35 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Record local image IDs
+      - name: Log in to GHCR for main and tag pushes
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push the scanned images
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          docker push ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-backend:${{ github.sha }}
+          docker push ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-frontend:${{ github.sha }}
+
+      - name: Record image IDs and registry digests
         shell: bash
         run: |
           {
-            echo "backend=$(docker image inspect --format '{{.Id}}' northstar-crm-backend:${{ github.sha }})"
-            echo "frontend=$(docker image inspect --format '{{.Id}}' northstar-crm-frontend:${{ github.sha }})"
+            echo "backend_local_id=$(docker image inspect --format '{{.Id}}' northstar-crm-backend:${{ github.sha }})"
+            echo "frontend_local_id=$(docker image inspect --format '{{.Id}}' northstar-crm-frontend:${{ github.sha }})"
+            if [ "${{ github.event_name }}" = "push" ]; then
+              echo "backend_registry_digest=$(docker image inspect --format '{{index .RepoDigests 0}}' ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-backend:${{ github.sha }})"
+              echo "frontend_registry_digest=$(docker image inspect --format '{{index .RepoDigests 0}}' ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-frontend:${{ github.sha }})"
+            fi
           } | tee image-digests.txt
           cat image-digests.txt >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload image IDs
+      - name: Upload image IDs and digests
         uses: actions/upload-artifact@v4
         with:
           name: image-digests-${{ github.sha }}
