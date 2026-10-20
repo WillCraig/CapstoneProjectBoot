@@ -11,15 +11,15 @@ import { InteractionType } from './interaction.model';
   standalone: true,
   imports: [FormsModule, RouterLink],
   template: `
-    <section class="page narrow">
-      <a routerLink="/interactions" [queryParams]="{ customerId }">← Back to interactions</a>
+    <section>
+      <p><a routerLink="/interactions" [queryParams]="{ customerId }">Back to interactions</a></p>
       <h2>Record an interaction</h2>
 
       @if (error()) {
-        <p class="notice notice-error" role="alert" data-testid="create-error">{{ error() }}</p>
+        <p role="alert" data-testid="create-error">{{ error() }}</p>
       }
 
-      <form class="stack-form" (ngSubmit)="create()">
+      <form (ngSubmit)="create()">
         <label>
           Customer ID
           <input name="customerId" [(ngModel)]="customerId" required data-testid="create-customer-id" />

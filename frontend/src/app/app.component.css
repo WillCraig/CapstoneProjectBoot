@@ -4,22 +4,14 @@ header {
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #cbd5e1;
-  background: #ffffff;
-}
-
-header h1 {
-  margin: 0;
-  font-size: 1.4rem;
+  border-bottom: 1px solid #ccc;
 }
 
 nav {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
 main {
-  padding: 1rem 1.25rem 2rem;
+  padding: 1rem 1.25rem;
 }

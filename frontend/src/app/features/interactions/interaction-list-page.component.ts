@@ -12,23 +12,20 @@ import { Interaction } from './interaction.model';
   standalone: true,
   imports: [DatePipe, FormsModule, RouterLink],
   template: `
-    <section class="page">
-      <div class="page-heading">
-        <div>
-          <h2>Customer interactions</h2>
-          <p class="muted">Correlation <code>{{ correlationId }}</code></p>
-        </div>
+    <section>
+      <h2>Customer interactions</h2>
+      <p>Correlation <code>{{ correlationId }}</code></p>
+      <p>
         <a
-          class="button-link"
           data-testid="new-interaction"
           [routerLink]="['/interactions/new']"
           [queryParams]="{ customerId: customerId }"
         >
           New interaction
         </a>
-      </div>
+      </p>
 
-      <form class="search-form" (ngSubmit)="reload()">
+      <form (ngSubmit)="reload()">
         <label>
           Customer ID
           <input name="customerId" [(ngModel)]="customerId" required data-testid="customer-id" />
@@ -38,43 +35,32 @@ import { Interaction } from './interaction.model';
         </button>
       </form>
 
-      <div class="fixture-actions" aria-label="Demo customers">
-        <span>Demo customers:</span>
+      <p>
+        Demo customers:
         <button type="button" data-testid="customer-amina" (click)="chooseCustomer('CUS-1001')">
           Amina Khan (CUS-1001)
         </button>
         <button type="button" data-testid="customer-ravi" (click)="chooseCustomer('CUS-1002')">
           Ravi Singh (CUS-1002)
         </button>
-      </div>
+      </p>
 
       @if (error()) {
-        <p class="notice notice-error" role="alert" data-testid="list-error">{{ error() }}</p>
+        <p role="alert" data-testid="list-error">{{ error() }}</p>
       } @else if (!loading() && rows().length === 0) {
-        <p class="notice" data-testid="empty-state">No interactions recorded for this customer yet.</p>
+        <p data-testid="empty-state">No interactions recorded for this customer yet.</p>
       }
 
-      <ul class="interaction-list">
+      <ul>
         @for (row of rows(); track row.id) {
           <li data-testid="interaction-row">
-            <div class="interaction-main">
-              <strong>{{ row.interactionType }}</strong>
-              <span>{{ row.summary }}</span>
-              <small>
-                {{ row.createdAt | date: 'medium' }} · {{ row.correlationId }}
-              </small>
-            </div>
-            <div class="row-actions">
-              <a [routerLink]="['/interactions', row.id]" data-testid="interaction-detail">Details</a>
-              <button
-                type="button"
-                class="danger"
-                data-testid="delete-interaction"
-                (click)="remove(row)"
-              >
-                Delete
-              </button>
-            </div>
+            <strong>{{ row.interactionType }}</strong>
+            — {{ row.summary }}
+            ({{ row.createdAt | date: 'medium' }} · {{ row.correlationId }})
+            <a [routerLink]="['/interactions', row.id]" data-testid="interaction-detail">Details</a>
+            <button type="button" data-testid="delete-interaction" (click)="remove(row)">
+              Delete
+            </button>
           </li>
         }
       </ul>

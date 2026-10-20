@@ -11,25 +11,31 @@ import { Interaction, InteractionType } from './interaction.model';
   standalone: true,
   imports: [DatePipe, FormsModule, RouterLink],
   template: `
-    <section class="page narrow">
-      <a routerLink="/interactions" [queryParams]="{ customerId: interaction()?.customerId }">
-        ← Back to interactions
-      </a>
+    <section>
+      <p>
+        <a routerLink="/interactions" [queryParams]="{ customerId: interaction()?.customerId }">
+          Back to interactions
+        </a>
+      </p>
       <h2>Interaction details</h2>
 
       @if (error()) {
-        <p class="notice notice-error" role="alert" data-testid="detail-error">{{ error() }}</p>
+        <p role="alert" data-testid="detail-error">{{ error() }}</p>
       }
 
       @if (interaction(); as current) {
-        <dl class="details">
-          <div><dt>Customer</dt><dd data-testid="detail-customer">{{ current.customerId }}</dd></div>
-          <div><dt>Created</dt><dd>{{ current.createdAt | date: 'medium' }}</dd></div>
-          <div><dt>Correlation</dt><dd>{{ current.correlationId }}</dd></div>
-          <div><dt>Interaction ID</dt><dd class="break-word">{{ current.id }}</dd></div>
+        <dl>
+          <dt>Customer</dt>
+          <dd data-testid="detail-customer">{{ current.customerId }}</dd>
+          <dt>Created</dt>
+          <dd>{{ current.createdAt | date: 'medium' }}</dd>
+          <dt>Correlation</dt>
+          <dd>{{ current.correlationId }}</dd>
+          <dt>Interaction ID</dt>
+          <dd>{{ current.id }}</dd>
         </dl>
 
-        <form class="stack-form" (ngSubmit)="save()">
+        <form (ngSubmit)="save()">
           <label>
             Interaction type
             <select name="interactionType" [(ngModel)]="interactionType" data-testid="edit-type">
@@ -49,26 +55,18 @@ import { Interaction, InteractionType } from './interaction.model';
               data-testid="edit-summary"
             ></textarea>
           </label>
-          <div class="form-actions">
-            <button type="submit" data-testid="save-interaction" [disabled]="saving()">
-              {{ saving() ? 'Saving…' : 'Save changes' }}
-            </button>
-            <button
-              type="button"
-              class="danger"
-              data-testid="delete-interaction"
-              [disabled]="deleting()"
-              (click)="remove()"
-            >
-              {{ deleting() ? 'Deleting…' : 'Delete interaction' }}
-            </button>
-          </div>
+          <button type="submit" data-testid="save-interaction" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save changes' }}
+          </button>
+          <button type="button" data-testid="delete-interaction" [disabled]="deleting()" (click)="remove()">
+            {{ deleting() ? 'Deleting…' : 'Delete interaction' }}
+          </button>
         </form>
         @if (saved()) {
-          <p class="notice notice-success" data-testid="saved-message">Changes saved.</p>
+          <p data-testid="saved-message">Changes saved.</p>
         }
       } @else if (loading()) {
-        <p class="notice">Loading…</p>
+        <p>Loading…</p>
       }
     </section>
   `,
