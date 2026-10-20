@@ -1,7 +1,11 @@
 <header>
   <h1>Northstar CRM</h1>
   @if (session.accessToken()) {
-    <button type="button" (click)="logout()">Log out</button>
+    <nav aria-label="Main navigation">
+      <a routerLink="/interactions">Interactions</a>
+      <a routerLink="/interactions/new">New interaction</a>
+      <button type="button" (click)="logout()">Log out</button>
+    </nav>
   }
 </header>
 <main>

@@ -57,4 +57,23 @@ describe('InteractionApiService', () => {
 
     expect(created).toEqual(sample);
   });
+
+  it('gets, updates, and deletes one interaction by id', () => {
+    service.getById(sample.id).subscribe();
+    let req = controller.expectOne(`${base}/${sample.id}`);
+    expect(req.request.method).toBe('GET');
+    req.flush(sample);
+
+    const update = { interactionType: 'EMAIL' as const, summary: 'Corrected summary' };
+    service.update(sample.id, update).subscribe();
+    req = controller.expectOne(`${base}/${sample.id}`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(update);
+    req.flush({ ...sample, ...update });
+
+    service.delete(sample.id).subscribe();
+    req = controller.expectOne(`${base}/${sample.id}`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+  });
 });

@@ -2,7 +2,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CreateInteractionRequest, Interaction } from './interaction.model';
+import {
+  CreateInteractionRequest,
+  Interaction,
+  UpdateInteractionRequest,
+} from './interaction.model';
 
 /** Typed gateway to the Lab 49 interaction API; components never build URLs themselves. */
 @Injectable({ providedIn: 'root' })
@@ -17,5 +21,17 @@ export class InteractionApiService {
 
   create(body: CreateInteractionRequest): Observable<Interaction> {
     return this.http.post<Interaction>(this.base, body);
+  }
+
+  getById(id: string): Observable<Interaction> {
+    return this.http.get<Interaction>(`${this.base}/${id}`);
+  }
+
+  update(id: string, body: UpdateInteractionRequest): Observable<Interaction> {
+    return this.http.put<Interaction>(`${this.base}/${id}`, body);
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`);
   }
 }
