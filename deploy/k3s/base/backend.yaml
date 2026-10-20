@@ -16,6 +16,8 @@ spec:
         app.kubernetes.io/name: crm-backend
         app.kubernetes.io/component: api
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true

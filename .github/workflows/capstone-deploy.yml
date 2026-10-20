@@ -55,6 +55,7 @@ jobs:
       CRM_INGRESS_HOST: ${{ vars.CRM_INGRESS_HOST }}
       CRM_DATABASE_URL: ${{ vars.CRM_DATABASE_URL }}
       CRM_KAFKA_BOOTSTRAP_SERVERS: ${{ vars.CRM_KAFKA_BOOTSTRAP_SERVERS }}
+      GHCR_PULL_USERNAME: ${{ vars.GHCR_PULL_USERNAME }}
 
     steps:
       - name: Check out repository
@@ -198,6 +199,22 @@ jobs:
             -input=false \
             -lock=false \
             -var="manage_namespaces=false"
+
+      - name: Create or update GHCR image-pull Secret
+        if: inputs.dry_run == false
+        shell: bash
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          set -euo pipefail
+          pull_username="${GHCR_PULL_USERNAME:-$GITHUB_REPOSITORY_OWNER}"
+          : "${GHCR_PULL_TOKEN:?set GHCR_PULL_TOKEN in the selected GitHub Environment}"
+          kubectl create namespace "$CRM_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl --namespace "$CRM_NAMESPACE" create secret docker-registry ghcr-pull-secret \
+            --docker-server=ghcr.io \
+            --docker-username="$pull_username" \
+            --docker-password="$GHCR_PULL_TOKEN" \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Create or update runtime Secret
         if: inputs.dry_run == false

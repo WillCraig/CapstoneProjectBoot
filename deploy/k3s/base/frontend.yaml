@@ -16,6 +16,8 @@ spec:
         app.kubernetes.io/name: crm-frontend
         app.kubernetes.io/component: web
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true

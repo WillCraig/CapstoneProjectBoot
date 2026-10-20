@@ -29,7 +29,7 @@ Backend (first terminal):
 
 ```bash
 cd backend
-mvn verify                    # some tests fail on purpose until the service TODOs are done
+mvn clean verify              # unit, MockMvc, JPA, API, and Kafka integration tests
 mvn spring-boot:run           # API on http://localhost:8080
 ```
 
@@ -51,7 +51,7 @@ Test data:
 | `CUS-1002` | Ravi Singh |
 | `CUS-9999` | Doesn't exist, should come back 404 |
 
-The API lives under `/api/v1/interactions`. For now it accepts a demo bearer token (`lab-demo-token`); real JWT checks replace that in Lab 51. Default correlation id is `lab-request-001`.
+The API lives under `/api/v1/interactions`. For now it accepts a demo bearer token (`lab-demo-token`); Lab 51 secures delivery with CI/CD gates, while replacing this demo scheme with real JWT validation remains future application hardening. Default correlation id is `lab-request-001`.
 
 To stop everything: `docker compose down` (add `-v` to wipe the database).
 
@@ -75,6 +75,7 @@ compose.yaml Local Postgres + Kafka
   - [Terraform / Ansible plan](docs/terraform-ansible-plan.md)
   - [Backlog](docs/backlog.md)
   - [Lab 49 backend notes](docs/lab49/README.md) · [Lab 50 frontend + persistence notes](docs/lab50/README.md)
+  - [Lab 51 CI/CD runbook](docs/capstone-cicd-runbook.md)
 - [defense/](defense/) — Lab 52 presentation packet
 - [CAPSTONE-BRIEF-AND-RUBRIC.md](CAPSTONE-BRIEF-AND-RUBRIC.md) — the course brief and self-check rubric
 
