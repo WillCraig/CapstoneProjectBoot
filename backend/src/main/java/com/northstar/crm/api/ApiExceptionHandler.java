@@ -1,5 +1,6 @@
 package com.northstar.crm.api;
 
+import com.northstar.crm.service.InteractionNotFoundException;
 import com.northstar.crm.service.UnknownCustomerException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -30,10 +31,19 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
   @ExceptionHandler(UnknownCustomerException.class)
-  public ResponseEntity<ProblemDetail> notFound(
+  public ResponseEntity<ProblemDetail> unknownCustomer(
       UnknownCustomerException ex, HttpServletRequest request) {
-    ProblemDetail problem =
-        ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    return notFound(ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(InteractionNotFoundException.class)
+  public ResponseEntity<ProblemDetail> unknownInteraction(
+      InteractionNotFoundException ex, HttpServletRequest request) {
+    return notFound(ex.getMessage(), request);
+  }
+
+  private static ResponseEntity<ProblemDetail> notFound(String detail, HttpServletRequest request) {
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, detail);
     problem.setTitle("Not Found");
     problem.setInstance(URI.create(request.getRequestURI()));
     return problemResponse(problem);

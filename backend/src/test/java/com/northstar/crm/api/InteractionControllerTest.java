@@ -4,14 +4,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.northstar.crm.api.dto.CreateInteractionRequest;
 import com.northstar.crm.api.dto.InteractionResponse;
+import com.northstar.crm.api.dto.UpdateInteractionRequest;
+import com.northstar.crm.service.InteractionNotFoundException;
 import com.northstar.crm.service.InteractionService;
 import com.northstar.crm.service.UnknownCustomerException;
 import java.time.Instant;
@@ -164,6 +168,77 @@ class InteractionControllerTest {
                 .header("Authorization", BEARER))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.status").value(404));
+  }
+
+  @Test
+  void detailUpdateDelete_forInteraction() throws Exception {
+    UUID id = UUID.randomUUID();
+    InteractionResponse original =
+        new InteractionResponse(
+            id, "CUS-1001", "NOTE", "Original", "lab-request-001",
+            Instant.parse("2026-10-20T12:00:00Z"));
+    InteractionResponse updated =
+        new InteractionResponse(
+            id, "CUS-1001", "EMAIL", "Corrected summary", "lab-request-001",
+            Instant.parse("2026-10-20T12:00:00Z"));
+    when(interactionService.get(id)).thenReturn(original);
+    when(interactionService.update(any(), any())).thenReturn(updated);
+
+    mockMvc
+        .perform(get("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.summary").value("Original"));
+
+    mockMvc
+        .perform(
+            put("/api/v1/interactions/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", BEARER)
+                .content(
+                    """
+                    {"interactionType":"EMAIL","summary":"Corrected summary"}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.interactionType").value("EMAIL"))
+        .andExpect(jsonPath("$.summary").value("Corrected summary"));
+    verify(interactionService)
+        .update(id, new UpdateInteractionRequest("EMAIL", "Corrected summary"));
+
+    mockMvc
+        .perform(delete("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .andExpect(status().isNoContent());
+    verify(interactionService).delete(id);
+  }
+
+  @Test
+  void detail_unknownInteraction_returns404ProblemDetail() throws Exception {
+    UUID id = UUID.randomUUID();
+    when(interactionService.get(id)).thenThrow(new InteractionNotFoundException(id));
+
+    mockMvc
+        .perform(get("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.detail").value("Unknown interaction: " + id));
+  }
+
+  @Test
+  void update_invalidType_returns400ProblemDetail() throws Exception {
+    UUID id = UUID.randomUUID();
+
+    mockMvc
+        .perform(
+            put("/api/v1/interactions/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", BEARER)
+                .content(
+                    """
+                    {"interactionType":"FAX","summary":"Bad update"}
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Validation failed"));
+
+    verify(interactionService, never()).update(any(), any());
   }
 
   @Test

@@ -1,6 +1,7 @@
 package com.northstar.crm.repo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.northstar.crm.domain.CustomerEntity;
@@ -58,6 +59,23 @@ class InteractionPersistenceIT extends AbstractIntegrationTest {
     // Ravi's later interaction must not leak into Amina's timeline.
     assertEquals(List.of(newer.getId(), older.getId()), timeline.stream().map(InteractionEntity::getId).toList());
     assertEquals("lab-request-001", timeline.get(0).getCorrelationId());
+  }
+
+  @Test
+  void softDeletedInteraction_hiddenFromTimelineAndFindById() {
+    CustomerEntity amina = customerRepository.findByPublicId("CUS-1001").orElseThrow();
+    InteractionEntity visible = save(amina, "NOTE", Instant.parse("2026-10-20T10:00:00Z"));
+    InteractionEntity deleted = save(amina, "EMAIL", Instant.parse("2026-10-20T11:00:00Z"));
+
+    deleted.setDeletedAt(Instant.parse("2026-10-20T12:00:00Z"));
+    interactionRepository.save(deleted);
+
+    assertFalse(interactionRepository.findById(deleted.getId()).isPresent());
+    assertEquals(
+        List.of(visible.getId()),
+        interactionRepository.findByCustomer_PublicIdOrderByCreatedAtDesc("CUS-1001").stream()
+            .map(InteractionEntity::getId)
+            .toList());
   }
 
   private InteractionEntity save(CustomerEntity customer, String type, Instant createdAt) {

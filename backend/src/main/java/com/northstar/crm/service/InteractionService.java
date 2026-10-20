@@ -2,6 +2,7 @@ package com.northstar.crm.service;
 
 import com.northstar.crm.api.dto.CreateInteractionRequest;
 import com.northstar.crm.api.dto.InteractionResponse;
+import com.northstar.crm.api.dto.UpdateInteractionRequest;
 import com.northstar.crm.domain.InteractionEntity;
 import com.northstar.crm.messaging.InteractionEventPublisher;
 import com.northstar.crm.repo.CustomerRepository;
@@ -60,6 +61,33 @@ public class InteractionService {
     // Publisher defers the Kafka send until this transaction commits (see docs/architecture.md).
     eventPublisher.publish(saved);
     return toResponse(saved);
+  }
+
+  @Transactional(readOnly = true)
+  public InteractionResponse get(UUID interactionId) {
+    return toResponse(findVisible(interactionId));
+  }
+
+  @Transactional
+  public InteractionResponse update(UUID interactionId, UpdateInteractionRequest request) {
+    InteractionEntity entity = findVisible(interactionId);
+    entity.setInteractionType(request.interactionType());
+    entity.setSummary(request.summary());
+    return toResponse(interactionRepository.save(entity));
+  }
+
+  /** Hides the interaction from future reads while retaining its PostgreSQL audit row. */
+  @Transactional
+  public void delete(UUID interactionId) {
+    InteractionEntity entity = findVisible(interactionId);
+    entity.setDeletedAt(Instant.now());
+    interactionRepository.save(entity);
+  }
+
+  private InteractionEntity findVisible(UUID interactionId) {
+    return interactionRepository
+        .findById(interactionId)
+        .orElseThrow(() -> new InteractionNotFoundException(interactionId));
   }
 
   static String resolveCorrelationId(String correlationHeader, String requestCorrelationId) {

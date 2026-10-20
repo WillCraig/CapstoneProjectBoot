@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -173,6 +175,51 @@ class InteractionApiIT extends AbstractIntegrationTest {
           record.value().contains("Requested address update"),
           "event must never carry the interaction summary");
     }
+  }
+
+  @Test
+  void updateAndSoftDelete_forAmina_throughApi() throws Exception {
+    MvcResult created =
+        mockMvc
+            .perform(
+                post("/api/v1/interactions")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Authorization", BEARER)
+                    .header("X-Correlation-ID", "lab-request-001")
+                    .content(
+                        """
+                        {"customerId":"CUS-1001","interactionType":"NOTE","summary":"Initial note"}
+                        """))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String id = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+
+    mockMvc
+        .perform(
+            put("/api/v1/interactions/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", BEARER)
+                .content(
+                    """
+                    {"interactionType":"EMAIL","summary":"Corrected by agent"}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.interactionType").value("EMAIL"))
+        .andExpect(jsonPath("$.summary").value("Corrected by agent"));
+
+    assertEquals(
+        "Corrected by agent",
+        interactionRepository.findById(UUID.fromString(id)).orElseThrow().getSummary());
+
+    mockMvc
+        .perform(delete("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .andExpect(status().isNoContent());
+    assertTrue(interactionRepository.findById(UUID.fromString(id)).isEmpty());
+
+    mockMvc
+        .perform(get("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.detail").value("Unknown interaction: " + id));
   }
 
   private static KafkaConsumer<String, String> newConsumer() {

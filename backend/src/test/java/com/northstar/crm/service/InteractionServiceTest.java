@@ -2,6 +2,7 @@ package com.northstar.crm.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.northstar.crm.api.dto.CreateInteractionRequest;
 import com.northstar.crm.api.dto.InteractionResponse;
+import com.northstar.crm.api.dto.UpdateInteractionRequest;
 import com.northstar.crm.domain.CustomerEntity;
 import com.northstar.crm.domain.InteractionEntity;
 import com.northstar.crm.messaging.InteractionEventPublisher;
@@ -141,6 +143,39 @@ class InteractionServiceTest {
   void list_unknownCustomer_fails() {
     assertThrows(UnknownCustomerException.class, () -> service.list("CUS-9999"));
     verify(interactionRepository, never()).findByCustomer_PublicIdOrderByCreatedAtDesc(any());
+  }
+
+  @Test
+  void getUpdateAndSoftDelete_visibleInteraction() {
+    InteractionEntity entity = interaction("NOTE", "Original summary", "lab-request-001");
+    when(interactionRepository.findById(entity.getId())).thenReturn(Optional.of(entity));
+
+    assertEquals(entity.getId(), service.get(entity.getId()).id());
+
+    InteractionResponse updated =
+        service.update(entity.getId(), new UpdateInteractionRequest("EMAIL", "Corrected summary"));
+    assertEquals("EMAIL", updated.interactionType());
+    assertEquals("Corrected summary", updated.summary());
+    assertNull(entity.getDeletedAt());
+
+    service.delete(entity.getId());
+    assertNotNull(entity.getDeletedAt());
+    verify(eventPublisher, never()).publish(any());
+  }
+
+  @Test
+  void getUpdateAndDelete_unknownInteraction_neverSaveOrPublish() {
+    UUID missingId = UUID.randomUUID();
+    when(interactionRepository.findById(missingId)).thenReturn(Optional.empty());
+
+    assertThrows(InteractionNotFoundException.class, () -> service.get(missingId));
+    assertThrows(
+        InteractionNotFoundException.class,
+        () -> service.update(missingId, new UpdateInteractionRequest("NOTE", "Nope")));
+    assertThrows(InteractionNotFoundException.class, () -> service.delete(missingId));
+
+    verify(interactionRepository, never()).save(any());
+    verify(eventPublisher, never()).publish(any());
   }
 
   private InteractionEntity interaction(String type, String summary, String correlationId) {
