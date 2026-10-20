@@ -2,10 +2,14 @@ package com.northstar.crm.service;
 
 import com.northstar.crm.api.dto.CreateInteractionRequest;
 import com.northstar.crm.api.dto.InteractionResponse;
+import com.northstar.crm.domain.CustomerEntity;
+import com.northstar.crm.domain.InteractionEntity;
 import com.northstar.crm.messaging.InteractionEventPublisher;
 import com.northstar.crm.repo.CustomerRepository;
 import com.northstar.crm.repo.InteractionRepository;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,66 +33,55 @@ public class InteractionService {
 
   @Transactional(readOnly = true)
   public List<InteractionResponse> list(String customerId) {
-    // TODO 1: reject unknown customer (CUS-9999 / missing) - throw UnknownCustomerException
-    if (!customerRepository.existsByPublicId(customerId) ) {
+    if (!customerRepository.existsByPublicId(customerId)) {
       throw new UnknownCustomerException("Unknown customer: " + customerId);
     }
-    // TODO 2: load interactions for the public id, newest first
-    //         (interactionRepository.findByCustomer_PublicIdOrderByCreatedAtDesc)
-    List<InteractionResponse> interactions = interactionRepository
-        .findByCustomer_PublicIdOrderByCreatedAtDesc(customerId)
-        .stream()
-        .map(interaction -> new InteractionResponse(
-            interaction.getId(),
-            interaction.getCustomer().getPublicId(),
-            interaction.getInteractionType(),
-            interaction.getSummary(),
-            interaction.getCorrelationId(),
-            interaction.getCreatedAt()
-        ))
+
+    return interactionRepository.findByCustomer_PublicIdOrderByCreatedAtDesc(customerId).stream()
+        .map(this::toResponse)
         .toList();
-    // TODO 3: map each entity to InteractionResponse (never return the entity)
-    return interactions;
-    //throw new UnsupportedOperationException("TODO: implement InteractionService.list");
   }
 
   @Transactional
   public InteractionResponse create(CreateInteractionRequest request, String correlationHeader) {
-    // TODO 1: resolve correlationId (header > request > DEFAULT_CORRELATION "lab-request-001")
-    String resolvedCorrelationID;
-    if(correlationHeader != null && !correlationHeader.isBlank()) {
-      resolvedCorrelationID = correlationHeader;
-    } else if(request.correlationID() != null && !request.correlationID().isBlank()) {
-      resolvedCorrelationID = request.correlationID();
-    } else {
-      resolvedCorrelationID = "lab-request-001";
-    }
-    // TODO 2: look up the customer by public id (e.g. CUS-1001); unknown (CUS-9999 / missing)
-    //         -> throw UnknownCustomerException
-    if(request.customerId() == null || request.customerId().isBlank() || !interactionRepository.customerExists(request.customerId())) {
-      throw new UnknownCustomerException("Unknown customer: " + (request.customerId() == null ? "<missing>" : request.customerId()));
-    }
-    // TODO 3: map request -> InteractionEntity (new UUID id, customer, type, summary,
-    //         correlationId, createdAt = Instant.now())
-    Interaction interaction = new Interaction();
-    interaction.setCustomerId(request.customerId());
+    CustomerEntity customer =
+        customerRepository
+            .findByPublicId(request.customerId())
+            .orElseThrow(
+                () -> new UnknownCustomerException("Unknown customer: " + request.customerId()));
+
+    String correlationId = resolveCorrelationId(correlationHeader, request.correlationId());
+
+    InteractionEntity interaction = new InteractionEntity();
+    interaction.setId(UUID.randomUUID());
+    interaction.setCustomer(customer);
     interaction.setInteractionType(request.interactionType());
     interaction.setSummary(request.summary());
-    interaction.setCorrelationID(resolvedCorrelationID);
+    interaction.setCorrelationId(correlationId);
     interaction.setCreatedAt(Instant.now());
-    // TODO 4: save via interactionRepository
-    Interaction savedInteraction = interactionRepository.save(interaction);
-    // TODO 5: publish CustomerInteractionRecordedV1 via eventPublisher.publish(saved)
-    eventPublisher.publish(savedInteraction);
-    // TODO 6: return InteractionResponse (the DTO, not the entity)
+
+    InteractionEntity saved = interactionRepository.save(interaction);
+    eventPublisher.publish(saved);
+    return toResponse(saved);
+  }
+
+  private String resolveCorrelationId(String correlationHeader, String requestCorrelationId) {
+    if (correlationHeader != null && !correlationHeader.isBlank()) {
+      return correlationHeader;
+    }
+    if (requestCorrelationId != null && !requestCorrelationId.isBlank()) {
+      return requestCorrelationId;
+    }
+    return DEFAULT_CORRELATION;
+  }
+
+  private InteractionResponse toResponse(InteractionEntity interaction) {
     return new InteractionResponse(
-        savedInteraction.getId(),
-        savedInteraction.getCustomerId(),
-        savedInteraction.getInteractionType(),
-        savedInteraction.getSummary(),
-        savedInteraction.getCorrelationID(),
-        savedInteraction.getCreatedAt()
-    );
-    //throw new UnsupportedOperationException("TODO: implement InteractionService.create");
+        interaction.getId(),
+        interaction.getCustomer().getPublicId(),
+        interaction.getInteractionType(),
+        interaction.getSummary(),
+        interaction.getCorrelationId(),
+        interaction.getCreatedAt());
   }
 }

@@ -29,6 +29,10 @@ class InteractionApiIT {
 
   @Autowired MockMvc mockMvc;
 
+  private String bearerToken() {
+    return "Bearer " + DemoBearerFilter.DEMO_TOKEN;
+  }
+
   @Test
   void list_withoutBearer_unauthorized() throws Exception {
     mockMvc
@@ -47,7 +51,7 @@ class InteractionApiIT {
         .perform(
             post("/api/v1/interactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", "Bearer lab-demo-token")
+                .header("Authorization", bearerToken())
                 .header("X-Correlation-ID", "lab-request-001")
                 .content(body))
         .andExpect(status().isCreated())
@@ -58,7 +62,7 @@ class InteractionApiIT {
         .perform(
             get("/api/v1/interactions")
                 .param("customerId", "CUS-1001")
-                .header("Authorization", "Bearer lab-demo-token"))
+                .header("Authorization", bearerToken()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].customerId").value("CUS-1001"));
   }
@@ -74,7 +78,7 @@ class InteractionApiIT {
         .perform(
             post("/api/v1/interactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", "Bearer lab-demo-token")
+                .header("Authorization", bearerToken())
                 .content(body))
         .andExpect(status().isNotFound());
   }

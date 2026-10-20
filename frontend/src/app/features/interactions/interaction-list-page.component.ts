@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InteractionApiService } from './interaction-api.service';
 import { Interaction } from './interaction.model';
@@ -6,28 +7,9 @@ import { Interaction } from './interaction.model';
 @Component({
   selector: 'app-interaction-list-page',
   standalone: true,
-  imports: [FormsModule],
-  template: `
-    <section>
-      <h2>Interactions</h2>
-      <p>Customer <code>{{ customerId }}</code> · correlation <code>lab-request-001</code></p>
-      @if (error()) {
-        <p role="alert">{{ error() }}</p>
-      }
-      <form (ngSubmit)="create()">
-        <label>
-          Summary
-          <input name="summary" [(ngModel)]="summary" required data-testid="summary" />
-        </label>
-        <button type="submit" data-testid="create">Record note</button>
-      </form>
-      <ul>
-        @for (row of rows(); track row.id) {
-          <li data-testid="interaction-row">{{ row.interactionType }} — {{ row.summary }} ({{ row.correlationId }})</li>
-        }
-      </ul>
-    </section>
-  `,
+  imports: [DatePipe, FormsModule],
+  templateUrl: './interaction-list-page.component.html',
+  styleUrl: './interaction-list-page.component.css',
 })
 export class InteractionListPageComponent {
   private readonly api = inject(InteractionApiService);

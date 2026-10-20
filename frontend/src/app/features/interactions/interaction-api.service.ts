@@ -10,15 +10,12 @@ export class InteractionApiService {
   private readonly base = `${environment.apiBaseUrl}/api/v1/interactions`;
 
   list(customerId: string): Observable<Interaction[]> {
-    // TODO: GET this.base with query param customerId via HttpClient
     return this.http.get<Interaction[]>(this.base, {
       params: new HttpParams().set('customerId', customerId),
     });
   }
 
   create(body: CreateInteractionRequest): Observable<Interaction> {
-    // TODO: POST this.base with JSON body
     return this.http.post<Interaction>(this.base, body);
-    //throw new Error('TODO: implement InteractionApiService.create');
   }
 }

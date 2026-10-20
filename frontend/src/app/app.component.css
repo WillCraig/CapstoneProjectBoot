@@ -3,10 +3,32 @@ header {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #ccc;
+  padding: 1rem max(1.25rem, calc((100% - 1100px) / 2));
+  border-bottom: 1px solid #dce3ec;
+  background: #fff;
+}
+
+header h1 {
+  margin: 0;
+  color: #142b49;
+  font-size: 1.15rem;
 }
 
 main {
-  padding: 1rem 1.25rem;
+  padding: 0 1.25rem;
+}
+
+button {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #253b57;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+button:hover {
+  background: #f3f6fa;
 }

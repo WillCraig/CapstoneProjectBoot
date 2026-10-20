@@ -18,30 +18,35 @@ Our Week 6 capstone: a small customer management platform for Northstar. Agents 
 
 ## Run it locally
 
-You need Docker, JDK 21, Maven, and Node 20+.
+You need Docker, JDK 21, Maven, and Node 20+. In PowerShell, run Docker Compose from the project root:
 
-```bash
-cp .env.example .env          # local only, never commit .env
-docker compose up -d          # Postgres 16 + single-node Kafka
+```powershell
+docker compose up -d
 ```
 
 Backend (first terminal):
 
-```bash
-cd backend
-mvn verify                    # some tests fail on purpose until the service TODOs are done
+```powershell
+Set-Location backend
+mvn test                      # tests use the local Postgres and Kafka services
 mvn spring-boot:run           # API on http://localhost:8080
 ```
 
 Frontend (second terminal):
 
-```bash
-cd frontend
+```powershell
+Set-Location frontend
 npm ci
-npx ng serve                  # UI on http://localhost:4200
+npm start                     # UI on http://localhost:4200
 ```
 
-Open http://localhost:4200, click **Mock login**, and search for a customer.
+Open http://localhost:4200 and click **Mock login** to open the interactions screen.
+
+To change how the app looks, edit `frontend/src/styles.css` for site-wide styling and
+`frontend/src/app/app.component.html` / `app.component.css` for the header and page shell.
+The login screen markup and styles are in `frontend/src/app/features/login/login-page.component.html`
+and `.css`; the interactions screen is in `frontend/src/app/features/interactions/interaction-list-page.component.html`
+and `.css`. Its behavior and fixed demo customer are in the matching `.component.ts` file.
 
 Test data:
 

@@ -21,8 +21,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Unit test carried forward from Lab 49, adapted to the Lab 50 JPA repositories (mocked).
  *
- * <p>EXPECTED TO FAIL until the TODOs in InteractionService are implemented. That is intentional:
- * these tests are the team's target for the create flow.
+ * <p>Uses mocked repositories to cover the interaction creation flow.
  */
 class InteractionServiceTest {
 
@@ -53,7 +52,6 @@ class InteractionServiceTest {
         new CreateInteractionRequest(
             "CUS-1001", "NOTE", "Follow-up on billing question", "lab-request-001");
 
-    // Fails until service TODOs are filled - that is intentional.
     InteractionResponse response = service.create(request, "lab-request-001");
 
     assertNotNull(response.id());

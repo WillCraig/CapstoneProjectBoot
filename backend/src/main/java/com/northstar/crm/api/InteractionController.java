@@ -36,16 +36,9 @@ public class InteractionController {
 
   @PostMapping
   public ResponseEntity<InteractionResponse> create(
-          @Valid @RequestBody CreateInteractionRequest request,
-          @RequestHeader(value = "X-Correlation-ID", required = false) String correlationHeader) {
-    // TODO: prefer header correlation when present; default lab-request-001 for session demos
-    String correlationId;
-    if (correlationHeader != null && !correlationHeader.isBlank()) {
-      correlationId = correlationHeader;
-    } else {
-      correlationId = "lab-request-001";
-    }
-    InteractionResponse body = interactionService.create(request, correlationId, correlationHeader);
+      @Valid @RequestBody CreateInteractionRequest request,
+      @RequestHeader(value = "X-Correlation-ID", required = false) String correlationHeader) {
+    InteractionResponse body = interactionService.create(request, correlationHeader);
     return ResponseEntity.status(HttpStatus.CREATED).body(body);
   }
 }
