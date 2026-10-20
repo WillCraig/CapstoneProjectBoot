@@ -2,7 +2,7 @@ The Lab 50 code already lives in this repo under `frontend/` and `backend/`. Not
 
 # Lab 50 — Angular + PostgreSQL slice (~45 minutes)
 
-**Theme:** Angular feature + JWT interceptor + PostgreSQL persistence smoke
+**Theme:** Angular feature + bearer interceptor + PostgreSQL persistence smoke
 
 ## Activity card
 
@@ -14,23 +14,31 @@ The Lab 50 code already lives in this repo under `frontend/` and `backend/`. Not
 
 ## 45-minute checklist
 
-- [ ] Fill `auth.interceptor.ts` Bearer TODO
-- [ ] Fill `InteractionApiService` HttpClient TODOs
-- [ ] Fill `InteractionService` persist/list TODOs
-- [ ] Confirm Flyway `V1__crm_schema.sql` (PostgreSQL, not Oracle)
-- [ ] Smoke create/list for `CUS-1001`
-- [ ] Start the [`frontend-persistence-demo.md`](frontend-persistence-demo.md) outline
+- [x] Fill `auth.interceptor.ts` bearer handling
+- [x] Fill `InteractionApiService` HttpClient TODOs
+- [x] Fill `InteractionService` persist/list TODOs (Lab 49)
+- [x] Confirm Flyway `V1__crm_schema.sql` (PostgreSQL, not Oracle)
+- [x] Smoke create/list for `CUS-1001`
+- [x] Complete the [`frontend-persistence-demo.md`](frontend-persistence-demo.md) runbook
+
+Full path also completed: lazy list/create/detail routes, backend
+detail/update endpoints, Flyway V3 soft-delete, browser CRUD evidence, and
+Selenium scenario notes in the demo runbook.
 
 ## Smoke test
 
 ```bash
 cp .env.example .env
 docker compose up -d
-cd backend && mvn -B test
+cd backend && mvn -B clean verify
 cd ../frontend && npm ci && npx ng build
+CHROME_BIN='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
+  npx ng test --watch=false --browsers=ChromeHeadless
 ```
 
-`ng` is not required on PATH — use `npx ng`. Angular UI is Lab 50; the k3s deploy is Lab 51.
+`ng` is not required on PATH — use `npx ng`. Backend ITs use Testcontainers;
+on this Colima workstation export the Docker variables documented in
+`../lab49/backend-demo.md` first. Angular UI is Lab 50; the k3s deploy is Lab 51.
 
 ## Timed-path Pass criteria
 
