@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Replace this placeholder namespace and host with the instructor assignment.
+namespace: northstar-crm-test
+resources:
+  - ../../base
+replicas:
+  - name: crm-backend
+    count: 1
+  - name: crm-frontend
+    count: 1
+patches:
+  - target:
+      kind: Ingress
+      name: crm
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: crm-test.example.invalid

@@ -1,0 +1,212 @@
+name: Capstone Deploy
+
+# Manual, environment-gated promotion only. This workflow never rebuilds the
+# application or images; callers supply registry digests from Capstone CI.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: GitHub Environment and k3s overlay to promote
+        required: true
+        type: choice
+        options:
+          - dev
+          - test
+          - stage
+          - prod-like
+      backend_digest:
+        description: Backend registry digest, for example sha256:...
+        required: true
+        type: string
+      frontend_digest:
+        description: Frontend registry digest, for example sha256:...
+        required: true
+        type: string
+      image_owner:
+        description: GHCR owner (defaults to this repository owner)
+        required: false
+        type: string
+      dry_run:
+        description: Render manifests only; do not contact the cluster
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: capstone-deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      TARGET_ENV: ${{ inputs.environment }}
+      BACKEND_DIGEST: ${{ inputs.backend_digest }}
+      FRONTEND_DIGEST: ${{ inputs.frontend_digest }}
+      INPUT_IMAGE_OWNER: ${{ inputs.image_owner }}
+      DRY_RUN: ${{ inputs.dry_run }}
+      CRM_NAMESPACE: ${{ vars.CRM_NAMESPACE }}
+      CRM_INGRESS_HOST: ${{ vars.CRM_INGRESS_HOST }}
+      CRM_DATABASE_URL: ${{ vars.CRM_DATABASE_URL }}
+      CRM_KAFKA_BOOTSTRAP_SERVERS: ${{ vars.CRM_KAFKA_BOOTSTRAP_SERVERS }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Validate promotion inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for digest in "$BACKEND_DIGEST" "$FRONTEND_DIGEST"; do
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+              echo "Digests must look like sha256:<64 lowercase hex characters>" >&2
+              exit 1
+            }
+          done
+          if [[ "$DRY_RUN" != "true" ]]; then
+            : "${CRM_NAMESPACE:?set CRM_NAMESPACE in the selected GitHub Environment}"
+            : "${CRM_INGRESS_HOST:?set CRM_INGRESS_HOST in the selected GitHub Environment}"
+            : "${CRM_DATABASE_URL:?set CRM_DATABASE_URL in the selected GitHub Environment}"
+            : "${CRM_KAFKA_BOOTSTRAP_SERVERS:?set CRM_KAFKA_BOOTSTRAP_SERVERS in the selected GitHub Environment}"
+          fi
+
+      - name: Render digest-pinned manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d)"
+          cp -R deploy/k3s "$workdir/k3s"
+          overlay="$workdir/k3s/overlays/$TARGET_ENV"
+          owner="${INPUT_IMAGE_OWNER:-$GITHUB_REPOSITORY_OWNER}"
+          owner="${owner,,}"
+
+          (
+            cd "$overlay"
+            if [[ -n "${CRM_NAMESPACE:-}" ]]; then
+              kustomize edit set namespace "$CRM_NAMESPACE"
+            fi
+            kustomize edit set image \
+              "ghcr.io/willcraig/capstone-crm-backend:pending=ghcr.io/${owner}/capstone-crm-backend@${BACKEND_DIGEST}" \
+              "ghcr.io/willcraig/capstone-crm-frontend:pending=ghcr.io/${owner}/capstone-crm-frontend@${FRONTEND_DIGEST}"
+          )
+
+          CRM_INGRESS_HOST="$CRM_INGRESS_HOST" CRM_DATABASE_URL="$CRM_DATABASE_URL" \
+          CRM_KAFKA_BOOTSTRAP_SERVERS="$CRM_KAFKA_BOOTSTRAP_SERVERS" \
+          python3 - "$workdir" "$TARGET_ENV" <<'PY'
+          import os
+          import pathlib
+          import re
+          import sys
+
+          workdir = pathlib.Path(sys.argv[1])
+          overlay = workdir / "k3s" / "overlays" / sys.argv[2] / "kustomization.yaml"
+          if os.environ.get("CRM_INGRESS_HOST"):
+              text = overlay.read_text()
+              text = re.sub(
+                  r"value: crm-[^ ]*\.example\.invalid",
+                  f"value: {os.environ['CRM_INGRESS_HOST']}",
+                  text,
+              )
+              overlay.write_text(text)
+
+          configmap = workdir / "k3s" / "base" / "configmap.yaml"
+          text = configmap.read_text()
+          if os.environ.get("CRM_DATABASE_URL"):
+              text = text.replace(
+                  "jdbc:postgresql://postgresql:5432/crm", os.environ["CRM_DATABASE_URL"]
+              )
+          if os.environ.get("CRM_KAFKA_BOOTSTRAP_SERVERS"):
+              text = text.replace("kafka:9092", os.environ["CRM_KAFKA_BOOTSTRAP_SERVERS"])
+          configmap.write_text(text)
+          PY
+
+          kustomize build "$overlay" > "$workdir/crm-rendered.yaml"
+          echo "CRM_RENDERED_MANIFEST=$workdir/crm-rendered.yaml" >> "$GITHUB_ENV"
+          {
+            echo "Environment: $TARGET_ENV"
+            echo "Dry run: $DRY_RUN"
+            echo "Backend: ghcr.io/${owner}/capstone-crm-backend@${BACKEND_DIGEST}"
+            echo "Frontend: ghcr.io/${owner}/capstone-crm-frontend@${FRONTEND_DIGEST}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload rendered manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: crm-${{ inputs.environment }}-manifests-${{ github.run_id }}
+          path: ${{ env.CRM_RENDERED_MANIFEST }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Configure cluster credentials
+        if: inputs.dry_run == false
+        shell: bash
+        env:
+          KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+        run: |
+          set -euo pipefail
+          # Prefer a cloud OIDC login action here when the cluster provider
+          # supports it. KUBECONFIG_B64 is the documented environment-secret
+          # fallback for the shared teaching k3s cluster; it is never printed.
+          : "${KUBECONFIG_B64:?set KUBECONFIG_B64 in the selected GitHub Environment}"
+          umask 077
+          mkdir -p "$HOME/.kube"
+          printf '%s' "$KUBECONFIG_B64" | base64 --decode > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+          kubectl config current-context >/dev/null
+
+      - name: Create or update runtime Secret
+        if: inputs.dry_run == false
+        shell: bash
+        env:
+          CRM_DATABASE_USERNAME: ${{ secrets.CRM_DATABASE_USERNAME }}
+          CRM_DATABASE_PASSWORD: ${{ secrets.CRM_DATABASE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${CRM_DATABASE_USERNAME:?set CRM_DATABASE_USERNAME in the selected GitHub Environment}"
+          : "${CRM_DATABASE_PASSWORD:?set CRM_DATABASE_PASSWORD in the selected GitHub Environment}"
+          kubectl create namespace "$CRM_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl --namespace "$CRM_NAMESPACE" create secret generic crm-secrets \
+            --from-literal="database-username=$CRM_DATABASE_USERNAME" \
+            --from-literal="database-password=$CRM_DATABASE_PASSWORD" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply manifests
+        if: inputs.dry_run == false
+        shell: bash
+        run: |
+          kubectl apply -f "$CRM_RENDERED_MANIFEST"
+          kubectl --namespace "$CRM_NAMESPACE" rollout status deployment/crm-backend --timeout=300s
+          kubectl --namespace "$CRM_NAMESPACE" rollout status deployment/crm-frontend --timeout=300s
+
+      - name: Smoke the Ingress with CUS-1001
+        if: inputs.dry_run == false
+        shell: bash
+        env:
+          CRM_SMOKE_TOKEN: ${{ secrets.CRM_SMOKE_BEARER_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${CRM_SMOKE_TOKEN:?set CRM_SMOKE_BEARER_TOKEN in the selected GitHub Environment}"
+          CRM_BASE_URL="https://${CRM_INGRESS_HOST}" \
+          CRM_SMOKE_CUSTOMER_ID=CUS-1001 \
+          CRM_SMOKE_CORRELATION_ID=lab-request-001 \
+          bash scripts/smoke-crm.sh
+
+      - name: Show workload diagnostics on failure
+        if: failure() && inputs.dry_run == false
+        shell: bash
+        run: |
+          kubectl --namespace "$CRM_NAMESPACE" get pods,deployments,services,ingress -o wide || true
+          kubectl --namespace "$CRM_NAMESPACE" get events --sort-by=.lastTimestamp | tail -50 || true
