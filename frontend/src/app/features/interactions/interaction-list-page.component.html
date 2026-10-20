@@ -1,0 +1,74 @@
+<section class="interactions">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Customer activity</p>
+      <h2>Interactions</h2>
+    </div>
+    <p class="customer">Recording for <code>{{ customerId() }}</code></p>
+  </div>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  <form class="customer-picker" (ngSubmit)="useCustomer()">
+    <label for="customer-id">Choose a customer or enter a public ID</label>
+    <div class="entry-controls">
+      <input
+        id="customer-id"
+        name="customerId"
+        [(ngModel)]="customerIdInput"
+        list="customer-options"
+        required
+        autocomplete="off"
+        placeholder="Customer public ID"
+        data-testid="customer-id"
+      />
+      <datalist id="customer-options">
+        @for (customer of customers(); track customer.customerId) {
+          <option [value]="customer.customerId" [label]="customer.fullName + ' (' + customer.status + ')'"></option>
+        }
+      </datalist>
+      <button type="submit" data-testid="load-customer">Load activity</button>
+    </div>
+    @if (customerError()) {
+      <p class="error" role="alert">{{ customerError() }}</p>
+    }
+  </form>
+
+  <form class="entry-form" (ngSubmit)="create()">
+    <label for="summary">Add an interaction note</label>
+    <div class="entry-controls">
+      <input
+        id="summary"
+        name="summary"
+        [(ngModel)]="summary"
+        required
+        data-testid="summary"
+        placeholder="What happened?"
+      />
+      <button type="submit" data-testid="create">Record note</button>
+    </div>
+  </form>
+
+  <div class="activity-heading">
+    <h3>Recent activity</h3>
+    <span>{{ rows().length }} records</span>
+  </div>
+  @if (rows().length === 0) {
+    <p class="empty-state">No interactions yet. Add a note to get started.</p>
+  } @else {
+    <ul class="activity-list">
+      @for (row of rows(); track row.id) {
+        <li data-testid="interaction-row">
+          <span class="type">{{ row.interactionType }}</span>
+          <span class="summary">{{ row.summary }}</span>
+          <time>{{ row.createdAt | date: 'medium' }}</time>
+        </li>
+      }
+    </ul>
+  }
+  <div class="page-actions">
+    <a class="back-button" routerLink="/home">Back to choices</a>
+  </div>
+</section>
