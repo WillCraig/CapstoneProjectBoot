@@ -63,6 +63,18 @@ Topic: `crm.customer.interactions.v1` · key: customer public id (e.g. `CUS-1001
 
 The event never carries the interaction summary.
 
+## Consumer (resilience)
+
+`InteractionEventConsumer` (group `crm-interactions-audit`) applies each event
+via `InteractionEventHandler`:
+
+- `eventVersion != 1` → `UnsupportedEventVersionException`, non-retryable, straight to DLT.
+- Dedupe: a `processed_event` row (Flyway `V2__processed_event.sql`, PK = `eventId`) records
+  each applied event; a redelivery with the same `eventId` is a logged no-op.
+- Other failures: bounded retry (2 × 500 ms) then dead-letter to
+  `crm.customer.interactions.v1.DLT` via `DeadLetterPublishingRecoverer`.
+- Logs carry ids + `correlationId` only.
+
 ## Endpoint
 
 `POST /api/v1/interactions` · `GET /api/v1/interactions?customerId=CUS-1001`
@@ -81,7 +93,7 @@ The event never carries the interaction summary.
 
 ```bash
 cd backend
-mvn -B clean verify   # 23 tests: 16 unit/MockMvc + 7 Testcontainers ITs, BUILD SUCCESS
+mvn -B clean verify   # 29 tests incl. Testcontainers API/persistence/consumer ITs, BUILD SUCCESS
 ```
 
 The integration tests start their own PostgreSQL 16 and Kafka containers, so
@@ -100,6 +112,5 @@ Run-verify-twice evidence lands with the failure-experiments slice.
 
 ## Remaining Lab 49 slices
 
-Problem Details error bodies, HTTP/JPA/Kafka integration tests, resilient
-consumer with dedupe / bounded retry / DLT, failure experiments, and the full
-reproduction runbook. Angular client is Lab 50.
+Failure experiments, verify-twice determinism, and the full reproduction
+runbook. Angular client is Lab 50.
