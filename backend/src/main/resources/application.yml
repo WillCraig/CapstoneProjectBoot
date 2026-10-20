@@ -1,6 +1,10 @@
 spring:
   application:
     name: crm
+  mvc:
+    # Framework MVC errors (missing param, unreadable body, ...) also render as Problem Details.
+    problemdetails:
+      enabled: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/crm}
     username: ${SPRING_DATASOURCE_USERNAME:crm}
