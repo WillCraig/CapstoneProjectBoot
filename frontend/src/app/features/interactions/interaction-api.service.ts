@@ -11,14 +11,14 @@ export class InteractionApiService {
 
   list(customerId: string): Observable<Interaction[]> {
     // TODO: GET this.base with query param customerId via HttpClient
-    void this.http;
-    void HttpParams;
-    void customerId;
-    return of([]);
+    return this.http.get<Interaction[]>(this.base, {
+      params: new HttpParams().set('customerId', customerId),
+    });
   }
 
   create(body: CreateInteractionRequest): Observable<Interaction> {
     // TODO: POST this.base with JSON body
-    throw new Error('TODO: implement InteractionApiService.create');
+    return this.http.post<Interaction>(this.base, body);
+    //throw new Error('TODO: implement InteractionApiService.create');
   }
 }

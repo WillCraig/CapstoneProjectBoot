@@ -18,10 +18,17 @@ public class InteractionEventPublisher {
   public void publish(InteractionEntity interaction) {
     // TODO (Lab 49): build CustomerInteractionRecordedV1 and publish to Kafka using KafkaTemplate,
     //   keyed by customer public id, with the correlationId carried in the event.
-    System.out.println(
-        "TODO publish event for customer="
-            + interaction.getCustomer().getPublicId()
-            + " correlation="
-            + interaction.getCorrelationId());
+    CustomerInteractionRecordedV1 event =
+            new CustomerInteractionRecordedV1(
+                    CustomerInteractionRecordedV1.TYPE,
+                    CustomerInteractionRecordedV1.VERSION,
+                    interaction.getId(),
+                    interaction.getCustomerId(),
+                    interaction.getInteractionType(),
+                    interaction.getCorrelationId(),
+                    interaction.getCreatedAt());
+    kafkaTemplate.send("crm.customer.interactions.v1", interaction.getCustomerId(), event);
+
+    //System.out.println("TODO publish event for customer=" + interaction.getCustomerId() + " correlation=" + interaction.getCorrelationId());
   }
 }
