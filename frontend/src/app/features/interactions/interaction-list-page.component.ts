@@ -1,13 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { InteractionApiService } from './interaction-api.service';
 import { Interaction } from './interaction.model';
 
 @Component({
   selector: 'app-interaction-list-page',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './interaction-list-page.component.html',
   styleUrl: './interaction-list-page.component.css',
 })

@@ -8,10 +8,23 @@ header {
   background: #fff;
 }
 
-header h1 {
-  margin: 0;
+.brand {
   color: #142b49;
   font-size: 1.15rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+header nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+header nav a {
+  color: #245da6;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 main {

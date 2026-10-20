@@ -2,6 +2,7 @@ package com.northstar.crm.api;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +39,49 @@ class InteractionApiIT {
     mockMvc
         .perform(get("/api/v1/interactions").param("customerId", "CUS-1001"))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void listCustomers_returnsTrackedCustomersInIdOrder() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/customers").header("Authorization", bearerToken()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].customerId").value("CUS-1001"))
+        .andExpect(jsonPath("$[0].fullName").value("Amina Khan"))
+        .andExpect(jsonPath("$[0].status").value("ACTIVE"))
+        .andExpect(jsonPath("$[1].customerId").value("CUS-1002"));
+  }
+
+  @Test
+  void createCustomer_generatesPublicIdAndSavesDetails() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/customers")
+                .header("Authorization", bearerToken())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"fullName":"Jordan Lee","status":"PROSPECT"}
+                    """))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.customerId").isNotEmpty())
+        .andExpect(jsonPath("$.fullName").value("Jordan Lee"))
+        .andExpect(jsonPath("$.status").value("PROSPECT"));
+  }
+
+  @Test
+  void updateCustomer_changesNameAndStatusWithoutChangingPublicId() throws Exception {
+    mockMvc
+        .perform(
+            put("/api/v1/customers/CUS-1001")
+                .header("Authorization", bearerToken())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"fullName":"Amina Khan-Smith","status":"CLOSED"}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.customerId").value("CUS-1001"))
+        .andExpect(jsonPath("$.fullName").value("Amina Khan-Smith"))
+        .andExpect(jsonPath("$.status").value("CLOSED"));
   }
 
   @Test

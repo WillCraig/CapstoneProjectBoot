@@ -40,7 +40,8 @@ npm ci
 npm start                     # UI on http://localhost:4200
 ```
 
-Open http://localhost:4200 and click **Mock login** to open the interactions screen.
+Open http://localhost:4200 and click **Mock login** to open the customer choices screen.
+From there, choose customer create/update, customer lookup, or customer interactions.
 
 To change how the app looks, edit `frontend/src/styles.css` for site-wide styling and
 `frontend/src/app/app.component.html` / `app.component.css` for the header and page shell.

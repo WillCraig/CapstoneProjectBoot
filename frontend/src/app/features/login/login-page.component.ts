@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
-import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-login-page',
@@ -9,14 +8,12 @@ import { HttpClient } from '@angular/common/http';
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.css',
 })
-
-
 export class LoginPageComponent {
   private readonly session = inject(AuthSessionService);
   private readonly router = inject(Router);
 
   login(): void {
     this.session.loginMock();
-    void this.router.navigate(['/interactions']);
+    void this.router.navigate(['/home']);
   }
 }

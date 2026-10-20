@@ -44,4 +44,16 @@ public class CustomerEntity {
   public String getStatus() {
     return status;
   }
+
+  public void setPublicId(String publicId) {
+    this.publicId = publicId;
+  }
+
+  public void setFullName(String fullName) {
+    this.fullName = fullName;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
+  }
 }
