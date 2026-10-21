@@ -1,0 +1,105 @@
+<section class="interactions">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Customer activity</p>
+      <h2>Interactions</h2>
+    </div>
+    <p class="customer">
+      Recording for <code data-testid="selected-customer">{{ customerId() }}</code>
+      · correlation <code data-testid="correlation-id">{{ correlationId }}</code>
+    </p>
+  </div>
+  <div class="page-actions">
+    <a
+      class="back-button"
+      [routerLink]="['/interactions/new']"
+      [queryParams]="{ customerId: customerId() }"
+      data-testid="new-interaction"
+    >New interaction</a>
+  </div>
+
+  <form class="customer-picker" (ngSubmit)="useCustomer()">
+    <label for="customer-id">Choose a customer or enter a public ID</label>
+    <div class="entry-controls">
+      <input
+        id="customer-id"
+        name="customerId"
+        [(ngModel)]="customerIdInput"
+        list="customer-options"
+        required
+        autocomplete="off"
+        placeholder="Customer public ID"
+        data-testid="customer-id"
+      />
+      <datalist id="customer-options">
+        @for (customer of customers(); track customer.customerId) {
+          <option [value]="customer.customerId" [label]="customer.fullName + ' (' + customer.status + ')'"></option>
+        }
+      </datalist>
+      <button type="submit" data-testid="load-interactions" [disabled]="loading()">
+        {{ loading() ? 'Loading…' : 'Load activity' }}
+      </button>
+    </div>
+    <p class="demo-customers">
+      Demo customers:
+      <button type="button" class="back-button" data-testid="customer-amina" (click)="chooseCustomer('CUS-1001')">
+        Amina Khan (CUS-1001)
+      </button>
+      <button type="button" class="back-button" data-testid="customer-ravi" (click)="chooseCustomer('CUS-1002')">
+        Ravi Singh (CUS-1002)
+      </button>
+    </p>
+    @if (customerError()) {
+      <p class="error" role="alert" data-testid="customer-error">{{ customerError() }}</p>
+    }
+  </form>
+
+  <form class="entry-form" (ngSubmit)="create()">
+    <label for="summary">Add an interaction note</label>
+    <div class="entry-controls">
+      <input
+        id="summary"
+        name="summary"
+        [(ngModel)]="summary"
+        required
+        maxlength="1024"
+        data-testid="summary"
+        placeholder="What happened?"
+      />
+      <button type="submit" data-testid="create" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Record note' }}
+      </button>
+    </div>
+  </form>
+
+  @if (error()) {
+    <p class="error" role="alert" data-testid="list-error">{{ error() }}</p>
+  }
+
+  <div class="activity-heading">
+    <h3>Recent activity</h3>
+    <span>{{ rows().length }} records</span>
+  </div>
+  @if (loading()) {
+    <p class="empty-state" role="status" data-testid="loading">Loading interactions…</p>
+  } @else if (!error() && rows().length === 0) {
+    <p class="empty-state" data-testid="empty-state">No interactions yet. Add a note to get started.</p>
+  } @else {
+    <ul class="activity-list">
+      @for (row of rows(); track row.id) {
+        <li data-testid="interaction-row">
+          <span class="type">{{ row.interactionType }}</span>
+          <span class="summary">{{ row.summary }}</span>
+          <time>{{ row.createdAt | date: 'medium' }}</time>
+          <span class="row-actions">
+            <a [routerLink]="['/interactions', row.id]" data-testid="interaction-detail">Details</a>
+            <button type="button" data-testid="delete-interaction" (click)="remove(row)">Delete</button>
+          </span>
+        </li>
+      }
+    </ul>
+  }
+  <div class="page-actions">
+    <a class="back-button" routerLink="/home">Back to choices</a>
+  </div>
+</section>

@@ -1,0 +1,253 @@
+# .github/workflows/capstone-ci.yml
+name: Capstone CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx ng test --watch=false --browsers=ChromeHeadless
+      - run: npx ng build --configuration=production
+      - name: Upload verified frontend bundle for image build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: frontend/dist/lab50-crm-ui
+          if-no-files-found: error
+          retention-days: 7
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: crm
+          POSTGRES_USER: crm
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crm -d crm"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/crm
+      SPRING_DATASOURCE_USERNAME: crm
+      SPRING_DATASOURCE_PASSWORD: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Verify
+        run: mvn -B clean verify
+      - name: Upload verified JAR for image build and package-once
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-verified-jar-${{ github.sha }}
+          path: |
+            backend/target/crm-backend-*.jar
+            !backend/target/*.jar.original
+          if-no-files-found: error
+          retention-days: 14
+
+  security-scan:
+    name: Security (dependency, secret, and config scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The local baseline still contains fixed HIGH/CRITICAL findings in the
+      # starter dependency set, so this job publishes evidence without blocking
+      # Lab 51 delivery yet. The runbook records that residual risk explicitly.
+      - name: Scan repository with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,config
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-repository.sarif
+          exit-code: "0"
+
+      - name: Upload repository scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-repository-${{ github.sha }}
+          path: trivy-repository.sarif
+          if-no-files-found: warn
+          retention-days: 30
+
+  container-images:
+    name: Container images (build, scan, and digest)
+    needs: [frontend, backend, security-scan]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive lowercase GHCR owner
+        id: registry
+        shell: bash
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Download verified frontend bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: frontend/dist/lab50-crm-ui
+
+      - name: Download verified backend JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-verified-jar-${{ github.sha }}
+          path: backend/target
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image from verified JAR
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          load: true
+          push: false
+          tags: |
+            northstar-crm-backend:${{ github.sha }}
+            ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-backend:${{ github.sha }}
+
+      - name: Build frontend image from verified bundle
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          load: true
+          push: false
+          tags: |
+            northstar-crm-frontend:${{ github.sha }}
+            ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-frontend:${{ github.sha }}
+
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: northstar-crm-backend:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-backend-image.sarif
+          exit-code: "0"
+
+      - name: Scan frontend image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: northstar-crm-frontend:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-frontend-image.sarif
+          exit-code: "0"
+
+      - name: Upload image scan reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-images-${{ github.sha }}
+          path: |
+            trivy-backend-image.sarif
+            trivy-frontend-image.sarif
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Log in to GHCR for main and tag pushes
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push the scanned images
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          docker push ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-backend:${{ github.sha }}
+          docker push ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-frontend:${{ github.sha }}
+
+      - name: Record image IDs and registry digests
+        shell: bash
+        run: |
+          {
+            echo "backend_local_id=$(docker image inspect --format '{{.Id}}' northstar-crm-backend:${{ github.sha }})"
+            echo "frontend_local_id=$(docker image inspect --format '{{.Id}}' northstar-crm-frontend:${{ github.sha }})"
+            if [ "${{ github.event_name }}" = "push" ]; then
+              echo "backend_registry_digest=$(docker image inspect --format '{{index .RepoDigests 0}}' ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-backend:${{ github.sha }})"
+              echo "frontend_registry_digest=$(docker image inspect --format '{{index .RepoDigests 0}}' ghcr.io/${{ steps.registry.outputs.owner }}/capstone-crm-frontend:${{ github.sha }})"
+            fi
+          } | tee image-digests.txt
+          cat image-digests.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload image IDs and digests
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-digests-${{ github.sha }}
+          path: image-digests.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  package-once:
+    name: Package verified JAR once
+    if: github.event_name == 'push'
+    needs: [frontend, backend, security-scan, container-images]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download verified backend JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-verified-jar-${{ github.sha }}
+          path: package
+
+      - name: Record SHA-256
+        shell: bash
+        run: |
+          cd package
+          sha256sum crm-backend-*.jar > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload package and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: crm-package-${{ github.sha }}
+          path: package/
+          if-no-files-found: error
+          retention-days: 30

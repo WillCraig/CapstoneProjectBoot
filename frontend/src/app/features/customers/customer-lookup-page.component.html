@@ -1,0 +1,72 @@
+<section class="page-card">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Customer directory</p>
+      <h2>Look up a customer</h2>
+    </div>
+    <a class="back-button" routerLink="/customers/new" data-testid="new-customer">New customer</a>
+  </div>
+
+  <form class="filters customer-search" (ngSubmit)="reload()">
+    <label for="customer-search">Search by name or customer ID</label>
+    <input id="customer-search" name="query" [(ngModel)]="query" data-testid="customer-search" />
+    <button type="submit" data-testid="search-customers" [disabled]="loading()">Search</button>
+    <span class="record-count">{{ visibleCustomers().length }} customers</span>
+  </form>
+
+  <div class="filters">
+    <label>
+      Customer status
+      <select [ngModel]="statusFilter()" (ngModelChange)="updateStatusFilter($event)" name="status" data-testid="status-filter">
+        <option value="ALL">All statuses</option>
+        <option value="PROSPECT">Prospect</option>
+        <option value="ACTIVE">Active</option>
+        <option value="CLOSED">Closed</option>
+      </select>
+    </label>
+    <label>
+      Customer ID order
+      <select [ngModel]="sortDirection()" (ngModelChange)="updateSortDirection($event)" name="sort" data-testid="sort-direction">
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+    </label>
+  </div>
+
+  @if (error()) {
+    <p class="error" role="alert" data-testid="list-error">{{ error() }}</p>
+  } @else if (loading()) {
+    <p class="empty-state" role="status">Loading customers…</p>
+  } @else if (visibleCustomers().length === 0) {
+    <p class="empty-state" data-testid="empty-state">No customers match this search and status.</p>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Customer ID</th>
+            <th scope="col">Customer name</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (customer of visibleCustomers(); track customer.customerId) {
+            <tr data-testid="customer-row">
+              <td><code>{{ customer.customerId }}</code></td>
+              <td>{{ customer.fullName }}</td>
+              <td><span class="status" [class]="'status status-' + customer.status.toLowerCase()">{{ customer.status }}</span></td>
+              <td class="customer-actions">
+                <a class="table-action" [routerLink]="['/customers', customer.customerId]" data-testid="customer-profile">Profile</a>
+                <a class="table-action" [routerLink]="['/customers', customer.customerId, 'edit']" data-testid="customer-edit">Edit</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <div class="page-actions">
+    <a class="back-button" routerLink="/home">Back to choices</a>
+  </div>
+</section>

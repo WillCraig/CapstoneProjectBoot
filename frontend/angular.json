@@ -58,6 +58,12 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",
@@ -76,6 +82,17 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -88,6 +105,11 @@
             },
             "development": {
               "buildTarget": "lab50-crm-ui:build:development"
+            },
+            "e2e": {
+              "buildTarget": "lab50-crm-ui:build:e2e",
+              "proxyConfig": "e2e/proxy.conf.mjs",
+              "port": 4300
             }
           },
           "defaultConfiguration": "development"

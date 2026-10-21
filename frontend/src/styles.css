@@ -1,4 +1,54 @@
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
+  background: #f3f6fa;
+  color: #253b57;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.customer-search {
+  align-items: end;
+}
+
+.customer-search label {
+  align-self: center;
+}
+
+.customer-search input {
+  min-width: 220px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #253b57;
+  font: inherit;
+}
+
+.customer-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.profile-facts {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.35fr) 1fr;
+  gap: 0.8rem 1rem;
+  margin: 1.5rem 0;
+}
+
+.profile-facts dt {
+  color: #536987;
+  font-weight: 600;
+}
+
+.profile-facts dd {
+  margin: 0;
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }

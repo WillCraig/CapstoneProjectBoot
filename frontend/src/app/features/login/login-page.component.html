@@ -1,0 +1,40 @@
+<section class="login-card">
+  <p class="eyebrow">Northstar CRM</p>
+  <h2>Sign in</h2>
+  <p class="description">
+    Sign in to open the customer activity workspace. The access token stays in memory for this
+    session.
+  </p>
+  @if (error()) {
+    <p class="error" role="alert" data-testid="login-error">{{ error() }}</p>
+  }
+  <form (ngSubmit)="login()">
+    <label for="login-username">Username</label>
+    <input
+      id="login-username"
+      name="username"
+      [(ngModel)]="username"
+      required
+      autocomplete="username"
+      data-testid="login-username"
+    />
+    <label for="login-password">Password</label>
+    <input
+      id="login-password"
+      name="password"
+      type="password"
+      [(ngModel)]="password"
+      required
+      autocomplete="current-password"
+      data-testid="login-password"
+    />
+    <button type="submit" data-testid="login-submit" [disabled]="busy()">
+      {{ busy() ? 'Signing in…' : 'Sign in' }}
+    </button>
+  </form>
+  <p class="security-note">
+    Demo users: <code>agent</code> (AGENT) and <code>admin</code> (AGENT + ADMIN). Passwords come
+    from the backend configuration.
+  </p>
+  <p class="security-note" data-testid="xss-probe">XSS probe (must stay text): {{ xssProbe }}</p>
+</section>
