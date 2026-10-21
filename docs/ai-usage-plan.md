@@ -1,6 +1,6 @@
 # Northstar CRM: AI Usage Plan (Lab 48)
 
-Our stack is Angular, Spring Boot, PostgreSQL, Kafka, GitHub Actions, and k3s. OpenShift isn't our path, so don't let AI suggestions pull us there.
+Our stack is Angular, Spring Boot, PostgreSQL, Kafka, GitHub Actions, and k3s. Don't let AI suggestions pull us toward OpenShift, React, Oracle, SOAP or Bitbucket. (Whether OpenShift is graded is an open question for the instructor, see [ADR 004](adrs/004-k3s-traefik-ingress.md). Only the team changes the platform, never an AI suggestion.)
 
 **Tools we use:** GitHub Copilot, Cursor, ChatGPT, IntelliJ AI Assistant, and Google Gemini. Anything similar follows the same rules.
 
@@ -33,3 +33,12 @@ AI-drafted code goes through the same CI gates as everything else. No skipped ch
 
 ## Attribution
 Every PR has an "AI assistance" section in its description. It says which tool was used, what it drafted, and who verified it (name plus which checks above they ran). If no AI was used, write "None." The reviewer doesn't approve until that section is filled in.
+
+## Example checks for the two areas the lab calls out
+
+- **Angular:** when AI drafted a page or service, we checked the TypeScript model against a real response (e.g. `GET /api/v1/customers/CUS-1001` returns `customerId`, `fullName`, `status`, `createdAt`), and checked that `ng test` covers the loading, error and `403` paths.
+- **Flyway/SQL:** when AI drafted a migration, we checked it was a **new** `V<n>__*.sql` (merged ones are never edited), PostgreSQL types only, and that the Testcontainers ITs applied it from empty.
+
+## How AI was used on this planning pack
+
+The Lab 48 documents were drafted with help from AI assistants (GitHub Copilot, Cursor, and an AI agent). Some early samples (branch `48-grok`) were AI-written and marked "team to confirm". Every claim in the final pack was checked against the code on `will_work` (file paths, test names, workflow YAML), and anything we couldn't confirm is marked **Team to confirm**. Human-owned decisions: the platform question, roles and owners, risk acceptance, and the sign-off in [the plan review](reviews/lab48-plan-review.md).
