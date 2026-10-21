@@ -14,17 +14,18 @@ import { Customer } from './customer.model';
   selector: 'app-customer-detail-page',
   standalone: true,
   imports: [DatePipe, RouterLink],
+  styleUrl: './customer-pages.component.css',
   template: `
-    <section>
-      <p><a routerLink="/customers">Back to customers</a></p>
+    <section class="page-card">
+      <p class="eyebrow">Customer directory</p>
       <h2>Customer profile</h2>
 
       @if (error()) {
-        <p role="alert" data-testid="detail-error">{{ error() }}</p>
+        <p class="error" role="alert" data-testid="detail-error">{{ error() }}</p>
       }
 
       @if (customer(); as current) {
-        <dl>
+        <dl class="profile-facts">
           <dt>Name</dt>
           <dd data-testid="profile-name">{{ current.fullName }}</dd>
           <dt>Customer ID</dt>
@@ -35,8 +36,9 @@ import { Customer } from './customer.model';
           <dd>{{ current.createdAt | date: 'medium' }}</dd>
         </dl>
 
-        <p>
+        <p class="profile-actions">
           <a
+            class="table-action"
             routerLink="/interactions"
             [queryParams]="{ customerId: current.customerId }"
             data-testid="view-interactions"
@@ -44,6 +46,7 @@ import { Customer } from './customer.model';
             View interactions
           </a>
           <a
+            class="table-action"
             routerLink="/interactions/new"
             [queryParams]="{ customerId: current.customerId }"
             data-testid="record-interaction"
@@ -51,6 +54,7 @@ import { Customer } from './customer.model';
             Record an interaction
           </a>
           <a
+            class="table-action"
             [routerLink]="['/customers', current.customerId, 'edit']"
             data-testid="edit-customer"
           >
@@ -63,13 +67,16 @@ import { Customer } from './customer.model';
             {{ closing() ? 'Closing…' : 'Close customer' }}
           </button>
         } @else if (current.status !== 'CLOSED') {
-          <p data-testid="close-requires-admin">Only an ADMIN can close a customer.</p>
+          <p class="field-help" data-testid="close-requires-admin">Only an ADMIN can close a customer.</p>
         } @else {
-          <p data-testid="closed-message">This customer is closed. History is kept for audit.</p>
+          <p class="field-help" data-testid="closed-message">This customer is closed. History is kept for audit.</p>
         }
       } @else if (loading()) {
-        <p>Loading…</p>
+        <p class="empty-state" role="status">Loading customer…</p>
       }
+      <div class="page-actions">
+        <a class="back-button" routerLink="/customers">Back to customers</a>
+      </div>
     </section>
   `,
 })

@@ -15,42 +15,67 @@ import { CustomerStatus } from './customer.model';
   selector: 'app-customer-form-page',
   standalone: true,
   imports: [FormsModule, RouterLink],
+  styleUrl: './customer-pages.component.css',
   template: `
-    <section>
-      <p><a routerLink="/customers">Back to customers</a></p>
-      <h2>{{ customerId ? 'Edit customer' : 'New customer' }}</h2>
+    <section class="page-card manage-page">
+      <p class="eyebrow">Customer maintenance</p>
+      <h2>{{ customerId ? 'Update customer' : 'Create new customer' }}</h2>
 
       @if (error()) {
-        <p role="alert" data-testid="form-error">{{ error() }}</p>
+        <p class="error" role="alert" data-testid="form-error">{{ error() }}</p>
       }
 
       @if (loading()) {
-        <p>Loading…</p>
+        <p class="empty-state" role="status">Loading customer…</p>
       } @else {
-        <form (ngSubmit)="save()">
-          <label>
-            Full name
-            <input
-              name="fullName"
-              [(ngModel)]="fullName"
-              required
-              maxlength="200"
-              data-testid="customer-name"
-            />
-          </label>
-          <label>
-            Status
-            <select name="status" [(ngModel)]="status" data-testid="customer-status">
-              @for (option of statusOptions; track option) {
-                <option [value]="option">{{ option }}</option>
-              }
-            </select>
-          </label>
-          <button type="submit" data-testid="save-customer" [disabled]="saving()">
-            {{ saving() ? 'Saving…' : 'Save customer' }}
-          </button>
+        <form class="customer-form" (ngSubmit)="save()">
+          <label for="public-id">Public ID</label>
+          <input
+            id="public-id"
+            name="publicId"
+            [value]="customerId || 'Assigned automatically when created'"
+            readonly
+            aria-describedby="public-id-help"
+          />
+          <span id="public-id-help" class="field-help">
+            This ID is assigned by the system and cannot be changed.
+          </span>
+
+          <label for="full-name">Full name</label>
+          <input
+            id="full-name"
+            name="fullName"
+            [(ngModel)]="fullName"
+            required
+            maxlength="200"
+            autocomplete="name"
+            placeholder="Enter customer's full name"
+            data-testid="customer-name"
+          />
+
+          <label for="status">Customer status</label>
+          <select id="status" name="status" [(ngModel)]="status" data-testid="customer-status">
+            @for (option of statusOptions; track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+
+          <div class="form-actions">
+            <button type="submit" data-testid="save-customer" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : customerId ? 'Save changes' : 'Create customer' }}
+            </button>
+          </div>
         </form>
       }
+
+      @if (!customerId) {
+        <p class="update-hint">
+          Need to change an existing customer? <a routerLink="/customers">Find a customer to update</a>.
+        </p>
+      }
+      <div class="page-actions">
+        <a class="back-button" routerLink="/customers">Back to customers</a>
+      </div>
     </section>
   `,
 })
