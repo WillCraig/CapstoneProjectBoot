@@ -13,7 +13,11 @@ import { Interaction, InteractionType } from './interaction.model';
   template: `
     <section>
       <p>
-        <a routerLink="/interactions" [queryParams]="{ customerId: interaction()?.customerId }">
+        <a
+          routerLink="/interactions"
+          [queryParams]="{ customerId: interaction()?.customerId }"
+          data-testid="back-to-interactions"
+        >
           Back to interactions
         </a>
       </p>
