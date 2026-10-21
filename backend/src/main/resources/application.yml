@@ -1,6 +1,10 @@
 spring:
   application:
     name: crm
+  mvc:
+    # Framework MVC errors (missing param, unreadable body, ...) also render as Problem Details.
+    problemdetails:
+      enabled: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/crm}
     username: ${SPRING_DATASOURCE_USERNAME:crm}
@@ -13,12 +17,67 @@ spring:
       hibernate.jdbc.time_zone: UTC
   flyway:
     enabled: true
-    baseline-on-migrate: true
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: crm-interactions-audit
+      # earliest so a restarted consumer replays what it missed; dedupe makes replay safe.
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.northstar.crm.messaging
 crm:
+  security:
+    jwt:
+      # HS256 signing key, >= 32 bytes. Deliberately no default: the app refuses to start
+      # without it. k3s reads it from Secret crm-secrets/jwt-secret; local dev uses the
+      # 'local' profile (application-local.yml).
+      secret: ${CRM_JWT_SECRET:}
+      issuer: northstar-crm
+      ttl: ${CRM_JWT_TTL:15m}
+    # Browser origins allowed to call /api/** cross-origin (ng serve). The k3s Ingress serves
+    # UI and API from one origin, so production needs no CORS entry.
+    cors-allowed-origins: ${CRM_CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4201,http://127.0.0.1:4201}
+    # Synthetic demo accounts. A blank password disables the account (no built-in default).
+    # Supply a BCrypt hash ($2a$...) in deployed environments; plain values are hashed at boot.
+    users:
+      agent:
+        password: ${CRM_AGENT_PASSWORD:}
+        roles: [AGENT]
+      admin:
+        password: ${CRM_ADMIN_PASSWORD:}
+        roles: [AGENT, ADMIN]
   kafka:
     topic: crm.customer.interactions.v1
+    # Poison records land on <topic>.DLT (DeadLetterPublishingRecoverer default naming).
+    consumer-group: crm-interactions-audit
+    # Customer status changes (PROSPECT -> ACTIVE, any -> CLOSED); DLT is <topic>.DLT.
+    lifecycle-topic: crm.customer.lifecycle.v1
+    lifecycle-consumer-group: crm-customer-lifecycle-audit
+management:
+  endpoints:
+    web:
+      # Only what the probes and an operator need; everything else stays unexposed.
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      # /actuator/health/liveness and /actuator/health/readiness for the k3s probes.
+      probes:
+        enabled: true
+      show-details: never
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          # Not ready to take traffic until PostgreSQL answers; liveness ignores the DB so a
+          # database outage does not make Kubernetes restart-loop healthy pods.
+          include: readinessState,db
+logging:
+  pattern:
+    # Every log line carries the request's correlation id (set by CorrelationIdFilter in MDC).
+    level: "%5p [correlationId=%X{correlationId:-}]"

@@ -4,8 +4,15 @@
       <p class="eyebrow">Customer directory</p>
       <h2>Look up a customer</h2>
     </div>
-    <span class="record-count">{{ visibleCustomers().length }} customers</span>
+    <a class="back-button" routerLink="/customers/new">New customer</a>
   </div>
+
+  <form class="filters customer-search" (ngSubmit)="reload()">
+    <label for="customer-search">Search by name or customer ID</label>
+    <input id="customer-search" name="query" [(ngModel)]="query" />
+    <button type="submit" [disabled]="loading()">Search</button>
+    <span class="record-count">{{ visibleCustomers().length }} customers</span>
+  </form>
 
   <div class="filters">
     <label>
@@ -49,7 +56,10 @@
               <td><code>{{ customer.customerId }}</code></td>
               <td>{{ customer.fullName }}</td>
               <td><span class="status" [class]="'status status-' + customer.status.toLowerCase()">{{ customer.status }}</span></td>
-              <td><a class="table-action" [routerLink]="['/customers/manage', customer.customerId]">Update</a></td>
+              <td class="customer-actions">
+                <a class="table-action" [routerLink]="['/customers', customer.customerId]">Profile</a>
+                <a class="table-action" [routerLink]="['/customers', customer.customerId, 'edit']">Edit</a>
+              </td>
             </tr>
           }
         </tbody>

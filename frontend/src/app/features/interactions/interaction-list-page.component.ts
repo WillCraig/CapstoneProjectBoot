@@ -1,9 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CustomerApiService } from '../customers/customer-api.service';
 import { Customer } from '../customers/customer.model';
+import { apiErrorMessage } from '../../core/api-error';
+import { LAB_CORRELATION_ID } from '../../core/correlation.interceptor';
 import { InteractionApiService } from './interaction-api.service';
 import { Interaction } from './interaction.model';
 
@@ -17,8 +19,11 @@ import { Interaction } from './interaction.model';
 export class InteractionListPageComponent {
   private readonly api = inject(InteractionApiService);
   private readonly customerApi = inject(CustomerApiService);
+  private readonly route = inject(ActivatedRoute);
 
-  readonly customerId = signal('CUS-1001');
+  readonly customerId = signal(
+    this.route.snapshot.queryParamMap.get('customerId') ?? 'CUS-1001',
+  );
   customerIdInput = this.customerId();
   summary = 'Follow-up on billing question';
   readonly customers = signal<Customer[]>([]);
@@ -52,7 +57,7 @@ export class InteractionListPageComponent {
         customerId: this.customerId(),
         interactionType: 'NOTE',
         summary: this.summary,
-        correlationId: 'lab-request-001',
+        correlationId: LAB_CORRELATION_ID,
       })
       .subscribe({
         next: () => this.reload(),
@@ -70,7 +75,15 @@ export class InteractionListPageComponent {
   private reload(): void {
     this.api.list(this.customerId()).subscribe({
       next: (rows) => this.rows.set(rows),
-      error: (err) => this.error.set(`List failed (${err.status ?? 'network'})`),
+      error: (err) => this.error.set(apiErrorMessage(err, 'Could not load interactions')),
+    });
+  }
+
+  remove(row: Interaction): void {
+    this.error.set(null);
+    this.api.delete(row.id).subscribe({
+      next: () => this.reload(),
+      error: (err) => this.error.set(apiErrorMessage(err, 'Could not delete this interaction')),
     });
   }
 }

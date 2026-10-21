@@ -1,8 +1,36 @@
 <section class="login-card">
   <p class="eyebrow">Northstar CRM</p>
   <h2>Sign in</h2>
-  <p class="description">Use the demo sign-in to open the customer activity workspace.</p>
-  <button type="button" (click)="login()">Mock login</button>
-  <p class="security-note">Demo access is stored in memory only for this session.</p>
-
+  <p class="description">
+    Sign in to open the customer activity workspace. The access token stays in memory for this
+    session.
+  </p>
+  @if (error()) {
+    <p class="error" role="alert" data-testid="login-error">{{ error() }}</p>
+  }
+  <form (ngSubmit)="login()">
+    <label for="login-username">Username</label>
+    <input
+      id="login-username"
+      name="username"
+      [(ngModel)]="username"
+      required
+      autocomplete="username"
+      data-testid="login-username"
+    />
+    <label for="login-password">Password</label>
+    <input
+      id="login-password"
+      name="password"
+      type="password"
+      [(ngModel)]="password"
+      required
+      autocomplete="current-password"
+      data-testid="login-password"
+    />
+    <button type="submit" data-testid="login-submit" [disabled]="busy()">
+      {{ busy() ? 'Signing in…' : 'Sign in' }}
+    </button>
+  </form>
+  <p class="security-note">Demo credentials are configured on the backend.</p>
 </section>

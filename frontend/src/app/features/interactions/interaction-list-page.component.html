@@ -6,6 +6,14 @@
     </div>
     <p class="customer">Recording for <code>{{ customerId() }}</code></p>
   </div>
+  <div class="page-actions">
+    <a
+      class="back-button"
+      [routerLink]="['/interactions/new']"
+      [queryParams]="{ customerId: customerId() }"
+      data-testid="new-interaction"
+    >New interaction</a>
+  </div>
 
   @if (error()) {
     <p class="error" role="alert">{{ error() }}</p>
@@ -64,6 +72,10 @@
           <span class="type">{{ row.interactionType }}</span>
           <span class="summary">{{ row.summary }}</span>
           <time>{{ row.createdAt | date: 'medium' }}</time>
+          <span class="row-actions">
+            <a [routerLink]="['/interactions', row.id]" data-testid="interaction-detail">Details</a>
+            <button type="button" data-testid="delete-interaction" (click)="remove(row)">Delete</button>
+          </span>
         </li>
       }
     </ul>

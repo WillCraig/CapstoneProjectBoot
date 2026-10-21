@@ -23,8 +23,8 @@ describe('InteractionListPageComponent', () => {
     }));
     customerApi = jasmine.createSpyObj<CustomerApiService>('CustomerApiService', ['list']);
     customerApi.list.and.returnValue(of([
-      { customerId: 'CUS-1001', fullName: 'Amina Khan', status: 'ACTIVE' },
-      { customerId: 'CUS-1002', fullName: 'Ravi Singh', status: 'PROSPECT' },
+      { customerId: 'CUS-1001', fullName: 'Amina Khan', status: 'ACTIVE', createdAt: '' },
+      { customerId: 'CUS-1002', fullName: 'Ravi Singh', status: 'PROSPECT', createdAt: '' },
     ]));
 
     await TestBed.configureTestingModule({

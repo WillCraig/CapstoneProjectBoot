@@ -50,6 +50,23 @@ h2 {
   font-size: 0.8rem;
 }
 
+label {
+  display: block;
+  margin: 1rem 0 0.4rem;
+  color: #253b57;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #253b57;
+  font: inherit;
+}
+
 button {
   width: 100%;
   margin-top: 1rem;
@@ -65,4 +82,16 @@ button {
 
 button:hover {
   background: #194a89;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fff0ef;
+  color: #a32922;
 }

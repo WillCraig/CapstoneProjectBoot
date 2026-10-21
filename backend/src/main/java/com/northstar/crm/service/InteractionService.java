@@ -2,7 +2,7 @@ package com.northstar.crm.service;
 
 import com.northstar.crm.api.dto.CreateInteractionRequest;
 import com.northstar.crm.api.dto.InteractionResponse;
-import com.northstar.crm.domain.CustomerEntity;
+import com.northstar.crm.api.dto.UpdateInteractionRequest;
 import com.northstar.crm.domain.InteractionEntity;
 import com.northstar.crm.messaging.InteractionEventPublisher;
 import com.northstar.crm.repo.CustomerRepository;
@@ -33,39 +33,64 @@ public class InteractionService {
 
   @Transactional(readOnly = true)
   public List<InteractionResponse> list(String customerId) {
-    if (!customerRepository.existsByPublicId(customerId)) {
-      throw new UnknownCustomerException("Unknown customer: " + customerId);
-    }
-
+    customerRepository
+        .findByPublicId(customerId)
+        .orElseThrow(() -> new UnknownCustomerException(customerId));
     return interactionRepository.findByCustomer_PublicIdOrderByCreatedAtDesc(customerId).stream()
-        .map(this::toResponse)
+        .map(InteractionService::toResponse)
         .toList();
   }
 
   @Transactional
   public InteractionResponse create(CreateInteractionRequest request, String correlationHeader) {
-    CustomerEntity customer =
+    String correlationId = resolveCorrelationId(correlationHeader, request.correlationId());
+    var customer =
         customerRepository
             .findByPublicId(request.customerId())
-            .orElseThrow(
-                () -> new UnknownCustomerException("Unknown customer: " + request.customerId()));
+            .orElseThrow(() -> new UnknownCustomerException(request.customerId()));
 
-    String correlationId = resolveCorrelationId(correlationHeader, request.correlationId());
+    InteractionEntity entity = new InteractionEntity();
+    entity.setId(UUID.randomUUID());
+    entity.setCustomer(customer);
+    entity.setInteractionType(request.interactionType());
+    entity.setSummary(request.summary());
+    entity.setCorrelationId(correlationId);
+    entity.setCreatedAt(Instant.now());
 
-    InteractionEntity interaction = new InteractionEntity();
-    interaction.setId(UUID.randomUUID());
-    interaction.setCustomer(customer);
-    interaction.setInteractionType(request.interactionType());
-    interaction.setSummary(request.summary());
-    interaction.setCorrelationId(correlationId);
-    interaction.setCreatedAt(Instant.now());
-
-    InteractionEntity saved = interactionRepository.save(interaction);
+    InteractionEntity saved = interactionRepository.save(entity);
+    // Publisher defers the Kafka send until this transaction commits (see docs/architecture.md).
     eventPublisher.publish(saved);
     return toResponse(saved);
   }
 
-  private String resolveCorrelationId(String correlationHeader, String requestCorrelationId) {
+  @Transactional(readOnly = true)
+  public InteractionResponse get(UUID interactionId) {
+    return toResponse(findVisible(interactionId));
+  }
+
+  @Transactional
+  public InteractionResponse update(UUID interactionId, UpdateInteractionRequest request) {
+    InteractionEntity entity = findVisible(interactionId);
+    entity.setInteractionType(request.interactionType());
+    entity.setSummary(request.summary());
+    return toResponse(interactionRepository.save(entity));
+  }
+
+  /** Hides the interaction from future reads while retaining its PostgreSQL audit row. */
+  @Transactional
+  public void delete(UUID interactionId) {
+    InteractionEntity entity = findVisible(interactionId);
+    entity.setDeletedAt(Instant.now());
+    interactionRepository.save(entity);
+  }
+
+  private InteractionEntity findVisible(UUID interactionId) {
+    return interactionRepository
+        .findById(interactionId)
+        .orElseThrow(() -> new InteractionNotFoundException(interactionId));
+  }
+
+  static String resolveCorrelationId(String correlationHeader, String requestCorrelationId) {
     if (correlationHeader != null && !correlationHeader.isBlank()) {
       return correlationHeader;
     }
@@ -75,13 +100,13 @@ public class InteractionService {
     return DEFAULT_CORRELATION;
   }
 
-  private InteractionResponse toResponse(InteractionEntity interaction) {
+  private static InteractionResponse toResponse(InteractionEntity entity) {
     return new InteractionResponse(
-        interaction.getId(),
-        interaction.getCustomer().getPublicId(),
-        interaction.getInteractionType(),
-        interaction.getSummary(),
-        interaction.getCorrelationId(),
-        interaction.getCreatedAt());
+        entity.getId(),
+        entity.getCustomer().getPublicId(),
+        entity.getInteractionType(),
+        entity.getSummary(),
+        entity.getCorrelationId(),
+        entity.getCreatedAt());
   }
 }

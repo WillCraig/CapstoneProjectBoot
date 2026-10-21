@@ -125,12 +125,77 @@ button:hover {
 
 .activity-list li {
   display: grid;
-  grid-template-columns: 6rem minmax(0, 1fr) auto;
+  grid-template-columns: 6rem minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 1rem;
   padding: 0.9rem 1rem;
   border: 1px solid #e5eaf0;
   border-radius: 10px;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.row-actions a {
+  color: #245da6;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.interaction-form {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.interaction-form label {
+  margin-top: 0.35rem;
+}
+
+.interaction-form select,
+.interaction-form textarea {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #253b57;
+  font: inherit;
+}
+
+.interaction-facts {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.35fr) 1fr;
+  gap: 0.7rem 1rem;
+  margin: 1.5rem 0;
+}
+
+.interaction-facts dt {
+  color: #536987;
+  font-weight: 600;
+}
+
+.interaction-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.danger-button {
+  background: #9b312b;
+}
+
+.danger-button:hover {
+  background: #7e2420;
+}
+
+.success {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #e6f5ed;
+  color: #17653b;
 }
 
 .type {

@@ -9,11 +9,11 @@ describe('CustomerLookupPageComponent', () => {
   let api: jasmine.SpyObj<CustomerApiService>;
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj<CustomerApiService>('CustomerApiService', ['list']);
-    api.list.and.returnValue(of([
-      { customerId: 'CUS-1002', fullName: 'Ravi Singh', status: 'PROSPECT' },
-      { customerId: 'CUS-1001', fullName: 'Amina Khan', status: 'ACTIVE' },
-      { customerId: 'CUS-1003', fullName: 'Mina Patel', status: 'ACTIVE' },
+    api = jasmine.createSpyObj<CustomerApiService>('CustomerApiService', ['search']);
+    api.search.and.returnValue(of([
+      { customerId: 'CUS-1002', fullName: 'Ravi Singh', status: 'PROSPECT', createdAt: '' },
+      { customerId: 'CUS-1001', fullName: 'Amina Khan', status: 'ACTIVE', createdAt: '' },
+      { customerId: 'CUS-1003', fullName: 'Mina Patel', status: 'ACTIVE', createdAt: '' },
     ]));
 
     await TestBed.configureTestingModule({
@@ -27,7 +27,7 @@ describe('CustomerLookupPageComponent', () => {
 
   it('loads customers sorted by ID and filters by status', () => {
     const component = fixture.componentInstance;
-    expect(api.list).toHaveBeenCalled();
+    expect(api.search).toHaveBeenCalledWith('');
     expect(component.visibleCustomers().map((customer) => customer.customerId))
       .toEqual(['CUS-1001', 'CUS-1002', 'CUS-1003']);
 
@@ -38,5 +38,12 @@ describe('CustomerLookupPageComponent', () => {
     expect(component.visibleCustomers().map((customer) => customer.customerId))
       .toEqual(['CUS-1003', 'CUS-1001']);
     expect(fixture.nativeElement.textContent).not.toContain('Ravi Singh');
+  });
+
+  it('searches the API by customer name or ID', () => {
+    fixture.componentInstance.query = 'amina';
+    fixture.componentInstance.reload();
+
+    expect(api.search).toHaveBeenCalledWith('amina');
   });
 });

@@ -9,9 +9,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import org.hibernate.annotations.SQLRestriction;
 
+/** Soft-deleted rows stay in PostgreSQL for audit but are invisible to normal JPA reads. */
 @Entity
 @Table(name = "customer_interaction")
+@SQLRestriction("deleted_at is null")
 public class InteractionEntity {
 
   @Id
@@ -33,6 +36,9 @@ public class InteractionEntity {
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
+
+  @Column(name = "deleted_at")
+  private Instant deletedAt;
 
   public UUID getId() {
     return id;
@@ -80,5 +86,13 @@ public class InteractionEntity {
 
   public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public Instant getDeletedAt() {
+    return deletedAt;
+  }
+
+  public void setDeletedAt(Instant deletedAt) {
+    this.deletedAt = deletedAt;
   }
 }

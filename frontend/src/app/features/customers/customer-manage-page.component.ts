@@ -1,8 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { CustomerApiService } from './customer-api.service';
-import { SaveCustomerRequest } from './customer.model';
+import { CustomerStatus } from './customer.model';
 
 @Component({
   selector: 'app-customer-manage-page',
@@ -15,8 +16,8 @@ export class CustomerManagePageComponent {
   private readonly api = inject(CustomerApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly session = inject(AuthSessionService);
 
-  readonly statuses = ['PROSPECT', 'ACTIVE', 'CLOSED'];
   readonly isEdit = signal(false);
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -24,7 +25,18 @@ export class CustomerManagePageComponent {
   readonly success = signal<string | null>(null);
   customerId = '';
   fullName = '';
-  status = 'PROSPECT';
+  status: CustomerStatus = 'PROSPECT';
+  private loadedStatus: CustomerStatus | null = null;
+
+  get statuses(): CustomerStatus[] {
+    if (!this.isEdit()) {
+      return ['PROSPECT', 'ACTIVE'];
+    }
+    if (this.session.isAdmin()) {
+      return ['PROSPECT', 'ACTIVE', 'CLOSED'];
+    }
+    return this.loadedStatus === 'CLOSED' ? ['CLOSED'] : ['PROSPECT', 'ACTIVE'];
+  }
 
   constructor() {
     this.route.paramMap.subscribe((params) => {
@@ -47,6 +59,7 @@ export class CustomerManagePageComponent {
           this.customerId = customer.customerId;
           this.fullName = customer.fullName;
           this.status = customer.status;
+          this.loadedStatus = customer.status;
           this.loading.set(false);
         },
         error: (err) => {
@@ -61,13 +74,13 @@ export class CustomerManagePageComponent {
     this.error.set(null);
     this.success.set(null);
     this.saving.set(true);
-    const request: SaveCustomerRequest = {
-      fullName: this.fullName.trim(),
-      status: this.status,
-    };
+    const fullName = this.fullName.trim();
     const operation = this.isEdit()
-      ? this.api.update(this.customerId, request)
-      : this.api.create(request);
+      ? this.api.update(this.customerId, { fullName, status: this.status })
+      : this.api.create({
+          fullName,
+          status: this.status === 'ACTIVE' ? 'ACTIVE' : 'PROSPECT',
+        });
 
     operation.subscribe({
       next: (customer) => {

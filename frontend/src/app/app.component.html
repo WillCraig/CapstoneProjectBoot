@@ -1,7 +1,10 @@
 <header>
   <a class="brand" routerLink="/home">Northstar CRM</a>
-  @if (session.accessToken()) {
-    <nav aria-label="Account">
+  @if (session.isAuthenticated()) {
+    <nav aria-label="Main navigation">
+      <a routerLink="/customers">Customers</a>
+      <a routerLink="/interactions">Interactions</a>
+      <span data-testid="signed-in-user">{{ session.username() }} ({{ session.roles().join(', ') }})</span>
       <button type="button" (click)="logout()">Log out</button>
     </nav>
   }

@@ -19,6 +19,7 @@ export class CustomerLookupPageComponent {
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  query = '';
   readonly visibleCustomers = computed(() => {
     const status = this.statusFilter();
     const direction = this.sortDirection() === 'asc' ? 1 : -1;
@@ -29,7 +30,13 @@ export class CustomerLookupPageComponent {
   });
 
   constructor() {
-    this.api.list().subscribe({
+    this.reload();
+  }
+
+  reload(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.api.search(this.query).subscribe({
       next: (customers) => {
         this.customers.set(customers);
         this.loading.set(false);
