@@ -22,6 +22,6 @@ export class LoginPageComponent {
 
   login(): void {
     this.session.loginMock();
-    void this.router.navigate(['/interactions']);
+    void this.router.navigate(['/customers']);
   }
 }

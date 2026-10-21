@@ -8,6 +8,38 @@ export const routes: Routes = [
       import('./features/login/login-page.component').then((m) => m.LoginPageComponent),
   },
   {
+    path: 'customers',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/customers/customer-list-page.component').then(
+        (m) => m.CustomerListPageComponent,
+      ),
+  },
+  {
+    path: 'customers/new',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/customers/customer-form-page.component').then(
+        (m) => m.CustomerFormPageComponent,
+      ),
+  },
+  {
+    path: 'customers/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/customers/customer-detail-page.component').then(
+        (m) => m.CustomerDetailPageComponent,
+      ),
+  },
+  {
+    path: 'customers/:id/edit',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/customers/customer-form-page.component').then(
+        (m) => m.CustomerFormPageComponent,
+      ),
+  },
+  {
     path: 'interactions',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -31,6 +63,6 @@ export const routes: Routes = [
         (m) => m.InteractionDetailPageComponent,
       ),
   },
-  { path: '', pathMatch: 'full', redirectTo: 'interactions' },
-  { path: '**', redirectTo: 'interactions' },
+  { path: '', pathMatch: 'full', redirectTo: 'customers' },
+  { path: '**', redirectTo: 'customers' },
 ];

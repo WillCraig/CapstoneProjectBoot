@@ -1,0 +1,122 @@
+import { DatePipe } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { apiErrorMessage } from '../../core/api-error';
+import { CustomerApiService } from './customer-api.service';
+import { Customer } from './customer.model';
+
+/**
+ * Customer profile. This is the middle beat of the defense demo: search -> profile ->
+ * interaction timeline. Editing and recording interactions hand off to their own pages.
+ */
+@Component({
+  selector: 'app-customer-detail-page',
+  standalone: true,
+  imports: [DatePipe, RouterLink],
+  template: `
+    <section>
+      <p><a routerLink="/customers">Back to customers</a></p>
+      <h2>Customer profile</h2>
+
+      @if (error()) {
+        <p role="alert" data-testid="detail-error">{{ error() }}</p>
+      }
+
+      @if (customer(); as current) {
+        <dl>
+          <dt>Name</dt>
+          <dd data-testid="profile-name">{{ current.fullName }}</dd>
+          <dt>Customer ID</dt>
+          <dd data-testid="profile-id">{{ current.customerId }}</dd>
+          <dt>Status</dt>
+          <dd data-testid="profile-status">{{ current.status }}</dd>
+          <dt>Customer since</dt>
+          <dd>{{ current.createdAt | date: 'medium' }}</dd>
+        </dl>
+
+        <p>
+          <a
+            routerLink="/interactions"
+            [queryParams]="{ customerId: current.customerId }"
+            data-testid="view-interactions"
+          >
+            View interactions
+          </a>
+          <a
+            routerLink="/interactions/new"
+            [queryParams]="{ customerId: current.customerId }"
+            data-testid="record-interaction"
+          >
+            Record an interaction
+          </a>
+          <a
+            [routerLink]="['/customers', current.customerId, 'edit']"
+            data-testid="edit-customer"
+          >
+            Edit customer
+          </a>
+        </p>
+
+        @if (current.status !== 'CLOSED') {
+          <button type="button" data-testid="close-customer" [disabled]="closing()" (click)="close()">
+            {{ closing() ? 'Closing…' : 'Close customer' }}
+          </button>
+        } @else {
+          <p data-testid="closed-message">This customer is closed. History is kept for audit.</p>
+        }
+      } @else if (loading()) {
+        <p>Loading…</p>
+      }
+    </section>
+  `,
+})
+export class CustomerDetailPageComponent implements OnInit {
+  private readonly api = inject(CustomerApiService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  readonly customer = signal<Customer | null>(null);
+  readonly error = signal<string | null>(null);
+  readonly loading = signal(false);
+  readonly closing = signal(false);
+
+  ngOnInit(): void {
+    const customerId = this.route.snapshot.paramMap.get('id');
+    if (!customerId) {
+      this.error.set('No customer ID was provided.');
+      return;
+    }
+    this.load(customerId);
+  }
+
+  close(): void {
+    const current = this.customer();
+    if (!current) return;
+    this.closing.set(true);
+    this.error.set(null);
+    this.api.delete(current.customerId).subscribe({
+      next: () => {
+        this.closing.set(false);
+        void this.router.navigate(['/customers']);
+      },
+      error: (err) => {
+        this.error.set(apiErrorMessage(err, 'Could not close this customer'));
+        this.closing.set(false);
+      },
+    });
+  }
+
+  private load(customerId: string): void {
+    this.loading.set(true);
+    this.api.getById(customerId).subscribe({
+      next: (customer) => {
+        this.customer.set(customer);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(apiErrorMessage(err, 'Could not load this customer'));
+        this.loading.set(false);
+      },
+    });
+  }
+}

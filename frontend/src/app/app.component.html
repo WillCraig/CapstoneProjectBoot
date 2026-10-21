@@ -2,6 +2,8 @@
   <h1>Northstar CRM</h1>
   @if (session.accessToken()) {
     <nav aria-label="Main navigation">
+      <a routerLink="/customers">Customers</a>
+      <a routerLink="/customers/new">New customer</a>
       <a routerLink="/interactions">Interactions</a>
       <a routerLink="/interactions/new">New interaction</a>
       <button type="button" (click)="logout()">Log out</button>

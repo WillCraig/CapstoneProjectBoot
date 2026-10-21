@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/interactions")
 @CrossOrigin(
-    origins = "http://localhost:4200",
+    origins = {"http://localhost:4200", "http://localhost:4201", "http://127.0.0.1:4201"},
     methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE},
     allowedHeaders = {"Authorization", "Content-Type", "X-Correlation-ID", "X-Correlation-Id"})
 public class InteractionController {

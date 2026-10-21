@@ -76,6 +76,7 @@ compose.yaml Local Postgres + Kafka
   - [Backlog](docs/backlog.md)
   - [Lab 49 backend notes](docs/lab49/README.md) · [Lab 50 frontend + persistence notes](docs/lab50/README.md)
   - [Lab 51 CI/CD runbook](docs/capstone-cicd-runbook.md)
+  - [Customer management](docs/customer-management.md) — customer CRUD slice (scope, design, tests)
 - [defense/](defense/) — Lab 52 presentation packet
 - [CAPSTONE-BRIEF-AND-RUBRIC.md](CAPSTONE-BRIEF-AND-RUBRIC.md) — the course brief and self-check rubric
 
