@@ -45,6 +45,7 @@ Enforced in `SecurityConfig` (the API is the boundary; Angular only hides button
 | `POST /api/v1/auth/login` | ✅ | ✅ | ✅ |
 | `GET /actuator/health`, `/actuator/health/{liveness,readiness}` | ✅ | ✅ | ✅ |
 | `GET/POST/PUT /api/v1/customers/**` | 401 | ✅ | ✅ |
+| `PUT /api/v1/customers/{id}` changing status **to** or **from** `CLOSED` | 401 | **403** | ✅ |
 | `DELETE /api/v1/customers/{id}` (close) | 401 | **403** | ✅ |
 | `GET/POST/PUT/DELETE /api/v1/interactions/**` | 401 | ✅ | ✅ |
 | `/actuator/metrics`, other actuator | 401 | 403 | ✅ |
@@ -53,8 +54,12 @@ Enforced in `SecurityConfig` (the API is the boundary; Angular only hides button
 401 and 403 are RFC 9457 Problem Details (`application/problem+json`) with `correlationId`,
 and 401 carries `WWW-Authenticate: Bearer`.
 
-Why closing is ADMIN-only: it changes a customer's lifecycle for every agent and emits an
-audit event. Normal agent work (search, profile, record interactions) never needs it.
+Why closing and reopening are ADMIN-only: they change a customer's lifecycle for every agent
+and emit an audit event. `DELETE` is guarded in `SecurityConfig`; a `PUT` that sets status
+`CLOSED`, or moves a `CLOSED` customer back to `PROSPECT`/`ACTIVE`, is refused in
+`CustomerService.update()` (via `CurrentActor.hasRole`), so the rule holds for any caller.
+Other edits (name, `PROSPECT`→`ACTIVE`) stay AGENT. Both paths return the same 403 Problem
+Details. Normal agent work (search, profile, record interactions) never needs either.
 
 ## Negative tests (proof)
 
@@ -68,6 +73,10 @@ audit event. Normal agent work (search, profile, record interactions) never need
 | Old `lab-demo-token` | 401 |
 | AGENT closes CUS-1002 | 403 Problem Details; status unchanged |
 | ADMIN closes CUS-1002 | 204; status `CLOSED` |
+| AGENT `PUT` CUS-1002 with status `CLOSED` | 403 Problem Details with correlationId; name and status unchanged |
+| ADMIN `PUT` CUS-1002 with status `CLOSED` | 200; status `CLOSED` |
+| AGENT `PUT` reopening a `CLOSED` CUS-1002 | 403; stays `CLOSED` |
+| AGENT `PUT` renaming CUS-1002, same status | 200 |
 | Login wrong password / unknown user | 401, same message |
 | Login blank fields | 400 |
 | `/actuator/metrics` anonymous / AGENT / ADMIN | 401 / 403 / 200 |
@@ -90,7 +99,8 @@ Event `actor` is now the JWT subject (`agent` / `admin`) instead of a placeholde
 - `authInterceptor` adds `Authorization: Bearer` to first-party `/api` calls only.
 - `unauthorizedInterceptor`: 401 → clear session, go to `/login`; 403 → stay signed in and
   show the Problem Details message.
-- `authGuard` and the hidden "Close customer" button are UX only.
+- `authGuard`, the hidden "Close customer" button, and hiding `CLOSED` from an agent's edit-form
+  status options (`customer-pages.spec.ts`) are UX only.
 
 ## Observability
 

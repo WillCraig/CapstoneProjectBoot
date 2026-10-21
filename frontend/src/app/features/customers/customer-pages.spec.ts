@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { AuthSessionService, LoginResponse } from '../../core/auth/auth-session.service';
 import { CustomerApiService } from './customer-api.service';
 import { CustomerDetailPageComponent } from './customer-detail-page.component';
 import { CustomerFormPageComponent } from './customer-form-page.component';
@@ -19,6 +20,21 @@ const ravi: Customer = {
   status: 'PROSPECT',
   createdAt: '2026-10-20T12:00:00Z',
 };
+const agentLogin: LoginResponse = {
+  accessToken: 'header.payload.signature',
+  tokenType: 'Bearer',
+  expiresIn: 900,
+  username: 'agent',
+  roles: ['AGENT'],
+};
+const adminLogin: LoginResponse = { ...agentLogin, username: 'admin', roles: ['AGENT', 'ADMIN'] };
+
+function statusOptionsIn(fixture: ComponentFixture<CustomerFormPageComponent>): string[] {
+  const select: HTMLSelectElement = fixture.nativeElement.querySelector(
+    '[data-testid="customer-status"]',
+  );
+  return Array.from(select.options).map((option) => option.value);
+}
 
 describe('customer pages', () => {
   let api: jasmine.SpyObj<CustomerApiService>;
@@ -116,8 +132,37 @@ describe('customer pages', () => {
     expect(navigate).toHaveBeenCalledWith(['/customers', 'CUS-1003']);
   });
 
+  it('edit form hides CLOSED from an agent', async () => {
+    await configure('CUS-1001');
+    TestBed.inject(AuthSessionService).start(agentLogin);
+    const fixture = TestBed.createComponent(CustomerFormPageComponent);
+    fixture.detectChanges();
+
+    expect(statusOptionsIn(fixture)).toEqual(['PROSPECT', 'ACTIVE']);
+  });
+
+  it('edit form offers an agent no way to reopen a CLOSED customer', async () => {
+    api.getById.and.returnValue(of({ ...amina, status: 'CLOSED' }));
+    await configure('CUS-1001');
+    TestBed.inject(AuthSessionService).start(agentLogin);
+    const fixture = TestBed.createComponent(CustomerFormPageComponent);
+    fixture.detectChanges();
+
+    expect(statusOptionsIn(fixture)).toEqual(['CLOSED']);
+  });
+
+  it('edit form offers CLOSED to an admin', async () => {
+    await configure('CUS-1001');
+    TestBed.inject(AuthSessionService).start(adminLogin);
+    const fixture = TestBed.createComponent(CustomerFormPageComponent);
+    fixture.detectChanges();
+
+    expect(statusOptionsIn(fixture)).toEqual(['PROSPECT', 'ACTIVE', 'CLOSED']);
+  });
+
   it('form page with an id loads, updates, and routes back to the profile', async () => {
     await configure('CUS-1001');
+    TestBed.inject(AuthSessionService).start(adminLogin);
     router = TestBed.inject(Router);
     const navigate = spyOn(router, 'navigate').and.returnValue(Promise.resolve(true));
     const fixture = TestBed.createComponent(CustomerFormPageComponent);

@@ -4,7 +4,10 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-/** The authenticated username (JWT {@code sub}) for audit fields such as an event's actor. */
+/**
+ * The authenticated user on this thread: the username (JWT {@code sub}) for audit fields such
+ * as an event's actor, and role checks for rules that live in the service layer.
+ */
 public final class CurrentActor {
 
   /** Used when no user is authenticated on this thread, e.g. a background job. */
@@ -18,5 +21,15 @@ public final class CurrentActor {
       return SYSTEM;
     }
     return auth.getName();
+  }
+
+  /** True when the authenticated user holds {@code role} (e.g. "ADMIN" for ROLE_ADMIN). */
+  public static boolean hasRole(String role) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
+      return false;
+    }
+    String authority = "ROLE_" + role;
+    return auth.getAuthorities().stream().anyMatch(a -> authority.equals(a.getAuthority()));
   }
 }

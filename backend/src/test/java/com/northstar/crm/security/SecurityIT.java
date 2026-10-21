@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -44,6 +45,7 @@ class SecurityIT extends AbstractIntegrationTest {
         .ifPresent(
             ravi -> {
               ravi.setStatus("PROSPECT");
+              ravi.setFullName("Ravi Singh");
               customerRepository.save(ravi);
             });
   }
@@ -104,6 +106,70 @@ class SecurityIT extends AbstractIntegrationTest {
         .perform(delete("/api/v1/customers/CUS-1002").header("Authorization", tokens.adminBearer()))
         .andExpect(status().isNoContent());
     assertEquals("CLOSED", customerRepository.findByPublicId("CUS-1002").orElseThrow().getStatus());
+  }
+
+  @Test
+  void agentClosingCustomerThroughPut_is403ProblemDetail_andRowUnchanged() throws Exception {
+    mockMvc
+        .perform(
+            put("/api/v1/customers/CUS-1002")
+                .header("Authorization", tokens.agentBearer())
+                .header("X-Correlation-Id", "sec-it-put-403")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fullName\":\"Ravi Renamed\",\"status\":\"CLOSED\"}"))
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(403))
+        .andExpect(jsonPath("$.detail").value("Your role does not allow this action."))
+        .andExpect(jsonPath("$.correlationId").value("sec-it-put-403"));
+    var ravi = customerRepository.findByPublicId("CUS-1002").orElseThrow();
+    assertEquals("PROSPECT", ravi.getStatus());
+    assertEquals("Ravi Singh", ravi.getFullName());
+  }
+
+  @Test
+  void adminClosingCustomerThroughPut_succeeds() throws Exception {
+    mockMvc
+        .perform(
+            put("/api/v1/customers/CUS-1002")
+                .header("Authorization", tokens.adminBearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fullName\":\"Ravi Singh\",\"status\":\"CLOSED\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("CLOSED"));
+    assertEquals("CLOSED", customerRepository.findByPublicId("CUS-1002").orElseThrow().getStatus());
+  }
+
+  @Test
+  void agentReopeningClosedCustomer_is403_andStaysClosed() throws Exception {
+    var ravi = customerRepository.findByPublicId("CUS-1002").orElseThrow();
+    ravi.setStatus("CLOSED");
+    customerRepository.save(ravi);
+
+    mockMvc
+        .perform(
+            put("/api/v1/customers/CUS-1002")
+                .header("Authorization", tokens.agentBearer())
+                .header("X-Correlation-Id", "sec-it-reopen-403")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fullName\":\"Ravi Singh\",\"status\":\"ACTIVE\"}"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.correlationId").value("sec-it-reopen-403"));
+    assertEquals("CLOSED", customerRepository.findByPublicId("CUS-1002").orElseThrow().getStatus());
+  }
+
+  @Test
+  void agentRenamingWithSameStatus_isAllowed() throws Exception {
+    mockMvc
+        .perform(
+            put("/api/v1/customers/CUS-1002")
+                .header("Authorization", tokens.agentBearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fullName\":\"Ravi K. Singh\",\"status\":\"PROSPECT\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.fullName").value("Ravi K. Singh"));
+    assertEquals(
+        "Ravi K. Singh", customerRepository.findByPublicId("CUS-1002").orElseThrow().getFullName());
   }
 
   @Test

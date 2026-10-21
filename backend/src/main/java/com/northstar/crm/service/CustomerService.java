@@ -6,9 +6,11 @@ import com.northstar.crm.api.dto.UpdateCustomerRequest;
 import com.northstar.crm.domain.CustomerEntity;
 import com.northstar.crm.messaging.CustomerLifecycleEventPublisher;
 import com.northstar.crm.repo.CustomerRepository;
+import com.northstar.crm.security.CurrentActor;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,12 +77,18 @@ public class CustomerService {
   public CustomerResponse update(String customerId, UpdateCustomerRequest request) {
     // 1. Load the customer or fail with 404 — an unknown ID must never create a row.
     CustomerEntity entity = findCustomer(customerId);
-    // 2. Apply the editable fields. Status is the lifecycle lever: this is where Ravi
-    //    moves PROSPECT -> ACTIVE when onboarding completes.
+    // 2. Closing (any -> CLOSED) and reopening (CLOSED -> any) are ADMIN-only, the same rule
+    //    as DELETE. It lives here, not only in SecurityConfig, so a PUT cannot get around it.
+    //    AccessDeniedException renders as the standard 403 Problem Details.
     String fromStatus = entity.getStatus();
+    if (changesClosedState(fromStatus, request.status()) && !CurrentActor.hasRole("ADMIN")) {
+      throw new AccessDeniedException("Closing or reopening a customer requires ADMIN");
+    }
+    // 3. Apply the editable fields. Status is the lifecycle lever: this is where Ravi
+    //    moves PROSPECT -> ACTIVE when onboarding completes.
     entity.setFullName(request.fullName().trim());
     entity.setStatus(request.status());
-    // 3. Persist; a real status change is announced (after commit) as CustomerStatusChangedV1.
+    // 4. Persist; a real status change is announced (after commit) as CustomerStatusChangedV1.
     CustomerResponse saved = toResponse(customerRepository.save(entity));
     if (!fromStatus.equals(request.status())) {
       lifecycleEvents.publishStatusChange(entity.getPublicId(), fromStatus, request.status());
@@ -99,6 +107,10 @@ public class CustomerService {
     entity.setStatus("CLOSED");
     customerRepository.save(entity);
     lifecycleEvents.publishStatusChange(entity.getPublicId(), fromStatus, "CLOSED");
+  }
+
+  private static boolean changesClosedState(String fromStatus, String toStatus) {
+    return "CLOSED".equals(fromStatus) != "CLOSED".equals(toStatus);
   }
 
   private CustomerEntity findCustomer(String customerId) {

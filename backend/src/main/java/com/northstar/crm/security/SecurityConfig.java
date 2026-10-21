@@ -38,6 +38,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * POST   /api/v1/auth/login          anyone (issues the token)
  * GET    /actuator/health/**         anyone (k3s probes, smoke); details never shown
  * DELETE /api/v1/customers/{id}      ADMIN (closing a customer is an administrative action)
+ * PUT    /api/v1/customers/{id}      AGENT, but a status change to or from CLOSED needs ADMIN
+ *                                    (enforced in CustomerService.update)
  * any    /api/**                     AGENT
  * other  /actuator/**                ADMIN
  * </pre>

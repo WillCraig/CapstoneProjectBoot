@@ -19,8 +19,12 @@ import com.northstar.crm.repo.CustomerRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /** Unit tests for the customer management slice: the JPA repository is mocked. */
@@ -50,6 +54,11 @@ class CustomerServiceTest {
               }
               return entity;
             });
+  }
+
+  @AfterEach
+  void clearSecurityContext() {
+    SecurityContextHolder.clearContext();
   }
 
   @Test
@@ -132,6 +141,43 @@ class CustomerServiceTest {
   }
 
   @Test
+  void update_agentSettingClosed_isDenied_andNothingIsSavedOrPublished() {
+    signInAs("agent", "ROLE_AGENT");
+
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.update("CUS-1001", new UpdateCustomerRequest("Amina Khan", "CLOSED")));
+
+    verify(customerRepository, never()).save(any());
+    verify(lifecycleEvents, never()).publishStatusChange(any(), any(), any());
+  }
+
+  @Test
+  void update_agentReopeningClosedCustomer_isDenied() {
+    CustomerEntity closed = customer(3L, "CUS-1003", "Closed Customer", "CLOSED");
+    when(customerRepository.findByPublicId("CUS-1003")).thenReturn(Optional.of(closed));
+    signInAs("agent", "ROLE_AGENT");
+
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.update("CUS-1003", new UpdateCustomerRequest("Closed Customer", "ACTIVE")));
+
+    assertEquals("CLOSED", closed.getStatus());
+    verify(customerRepository, never()).save(any());
+  }
+
+  @Test
+  void update_adminSettingClosed_closesAndPublishes() {
+    signInAs("admin", "ROLE_AGENT", "ROLE_ADMIN");
+
+    CustomerResponse response =
+        service.update("CUS-1001", new UpdateCustomerRequest("Amina Khan", "CLOSED"));
+
+    assertEquals("CLOSED", response.status());
+    verify(lifecycleEvents).publishStatusChange("CUS-1001", "ACTIVE", "CLOSED");
+  }
+
+  @Test
   void delete_closesCustomerButKeepsRow() {
     CustomerEntity amina = customer(1L, "CUS-1001", "Amina Khan", "ACTIVE");
     when(customerRepository.findByPublicId("CUS-1001")).thenReturn(Optional.of(amina));
@@ -161,6 +207,11 @@ class CustomerServiceTest {
     assertThrows(UnknownCustomerException.class, () -> service.delete("CUS-9999"));
     verify(customerRepository, never()).save(any());
     verify(lifecycleEvents, never()).publishStatusChange(any(), any(), any());
+  }
+
+  private static void signInAs(String username, String... authorities) {
+    TestingAuthenticationToken auth = new TestingAuthenticationToken(username, null, authorities);
+    SecurityContextHolder.getContext().setAuthentication(auth);
   }
 
   private static CustomerEntity customer(Long id, String publicId, String fullName, String status) {

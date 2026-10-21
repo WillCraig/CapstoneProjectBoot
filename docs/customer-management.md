@@ -68,7 +68,9 @@ document describes that build.
 ### Deliberately not built
 
 - **Real JWT/RBAC** — *since built* (see [docs/lab51/security-and-observability.md](lab51/security-and-observability.md)):
-  customer reads/creates/updates need AGENT; closing a customer (`DELETE`) is ADMIN-only.
+  customer reads/creates/updates need AGENT; closing a customer (`DELETE`, or a `PUT` that
+  sets status `CLOSED`) and reopening a `CLOSED` customer are ADMIN-only. The `PUT` rule is
+  checked in `CustomerService.update()`; agents never see `CLOSED` in the edit form.
 - **Kafka events for customer changes** — *since built*: `CustomerStatusChangedV1` on
   `crm.customer.lifecycle.v1`, published after commit when status changes and audited by
   a deduping consumer with a DLT (see the Lab 51 doc).
@@ -310,7 +312,7 @@ constraints are behavior, and mocks cannot testify about them.
 ## 7. Running it and the demo path
 
 Same commands as the rest of the capstone (see the root README). With the backend on
-:8080 and the frontend on :4200, sign in as `agent` (or `admin`, needed to close a
+:8081 and the frontend on :4200, sign in as `agent` (or `admin`, needed to close a
 customer); local-profile passwords are in `backend/src/main/resources/application-local.yml`.
 The app lands on Customers.
 
@@ -336,18 +338,20 @@ API-only spot checks (correlation header matches the rest of the capstone):
 
 ```bash
 curl -fsS -H "Authorization: Bearer [REDACTED]" \
-  "http://localhost:8080/api/v1/customers?q=amina"
+  "http://localhost:8081/api/v1/customers?q=amina"
 curl -fsS -i -X POST -H "Authorization: Bearer [REDACTED]" \
   -H "Content-Type: application/json" -H "X-Correlation-ID: lab-request-001" \
   -d '{"fullName":"Priya Nair","status":"PROSPECT"}' \
-  "http://localhost:8080/api/v1/customers"
+  "http://localhost:8081/api/v1/customers"
 ```
 
 ## 8. Residual risks and open scope
 
 Honest gaps, in the capstone's own "evidence over assertion" spirit:
 
-- ~~Authentication is still the demo token.~~ Resolved: JWT + AGENT/ADMIN roles; close is ADMIN-only.
+- ~~Authentication is still the demo token.~~ Resolved: JWT + AGENT/ADMIN roles; closing (DELETE or PUT to `CLOSED`) and reopening are
+  ADMIN-only. Proof: `SecurityIT` (agent PUT `CLOSED` → 403 with the row unchanged, admin PUT
+  `CLOSED` → 200, agent reopen → 403, agent rename → 200) and `CustomerServiceTest`.
 - ~~No customer lifecycle event on Kafka.~~ Resolved: `CustomerStatusChangedV1`.
 - **Concurrent edits are last-write-wins.** No version column, no 409. Acceptable for a
   two-fixture training system; wrong for production. The migration that adds `version`
@@ -355,7 +359,7 @@ Honest gaps, in the capstone's own "evidence over assertion" spirit:
   time so the two aggregates behave identically.
 - **Search has no pagination and no minimum term length.** Fine at demo scale; the
   repository is the single place to add `Pageable` when a real data volume appears.
-- **Committed locally** on `feature/customer-crud` (not pushed).
+- **Merged** from `feature/customer-crud` into `will_work` and pushed to origin (1cc1761); not yet merged to `main`.
 ### Likely defense questions, with pointers
 
 - *"Why does delete not delete?"* — §4.4: foreign keys, audit preservation, brief

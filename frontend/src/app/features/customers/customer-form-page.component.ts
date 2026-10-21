@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../core/api-error';
+import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { CustomerApiService } from './customer-api.service';
 import { CustomerStatus } from './customer.model';
 
@@ -57,17 +58,30 @@ export class CustomerFormPageComponent implements OnInit {
   private readonly api = inject(CustomerApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly session = inject(AuthSessionService);
 
   /** Null on /customers/new; the public ID on /customers/:id/edit. */
   customerId: string | null = null;
   fullName = '';
   status: CustomerStatus = 'PROSPECT';
+  /** Status as loaded from the API, so an agent editing a CLOSED customer keeps CLOSED. */
+  private loadedStatus: CustomerStatus | null = null;
   readonly error = signal<string | null>(null);
   readonly loading = signal(false);
   readonly saving = signal(false);
 
+  /**
+   * Closing and reopening are ADMIN-only (the API returns 403 otherwise), so agents never see
+   * CLOSED as a choice, and an agent editing a CLOSED customer can only keep it CLOSED. UX only.
+   */
   get statusOptions(): CustomerStatus[] {
-    return this.customerId ? ['PROSPECT', 'ACTIVE', 'CLOSED'] : ['PROSPECT', 'ACTIVE'];
+    if (!this.customerId) {
+      return ['PROSPECT', 'ACTIVE'];
+    }
+    if (this.session.isAdmin()) {
+      return ['PROSPECT', 'ACTIVE', 'CLOSED'];
+    }
+    return this.loadedStatus === 'CLOSED' ? ['CLOSED'] : ['PROSPECT', 'ACTIVE'];
   }
 
   ngOnInit(): void {
@@ -80,6 +94,7 @@ export class CustomerFormPageComponent implements OnInit {
       next: (customer) => {
         this.fullName = customer.fullName;
         this.status = customer.status;
+        this.loadedStatus = customer.status;
         this.loading.set(false);
       },
       error: (err) => {
