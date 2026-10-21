@@ -14,6 +14,7 @@ import com.northstar.crm.api.dto.CreateCustomerRequest;
 import com.northstar.crm.api.dto.CustomerResponse;
 import com.northstar.crm.api.dto.UpdateCustomerRequest;
 import com.northstar.crm.domain.CustomerEntity;
+import com.northstar.crm.messaging.CustomerLifecycleEventPublisher;
 import com.northstar.crm.repo.CustomerRepository;
 import java.time.Instant;
 import java.util.List;
@@ -26,12 +27,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 class CustomerServiceTest {
 
   private CustomerRepository customerRepository;
+  private CustomerLifecycleEventPublisher lifecycleEvents;
   private CustomerService service;
 
   @BeforeEach
   void setUp() {
     customerRepository = mock(CustomerRepository.class);
-    service = new CustomerService(customerRepository);
+    lifecycleEvents = mock(CustomerLifecycleEventPublisher.class);
+    service = new CustomerService(customerRepository, lifecycleEvents);
     when(customerRepository.findByPublicId("CUS-1001"))
         .thenReturn(Optional.of(customer(1L, "CUS-1001", "Amina Khan", "ACTIVE")));
     when(customerRepository.findByPublicId("CUS-1002"))
@@ -109,6 +112,14 @@ class CustomerServiceTest {
 
     assertEquals("CUS-1002", response.customerId());
     assertEquals("ACTIVE", response.status());
+    verify(lifecycleEvents).publishStatusChange("CUS-1002", "PROSPECT", "ACTIVE");
+  }
+
+  @Test
+  void update_nameOnly_publishesNoLifecycleEvent() {
+    service.update("CUS-1001", new UpdateCustomerRequest("Amina K. Khan", "ACTIVE"));
+
+    verify(lifecycleEvents, never()).publishStatusChange(any(), any(), any());
   }
 
   @Test
@@ -131,12 +142,25 @@ class CustomerServiceTest {
     assertTrue(amina.getId() != null);
     verify(customerRepository).save(amina);
     verify(customerRepository, never()).delete(any(CustomerEntity.class));
+    verify(lifecycleEvents).publishStatusChange("CUS-1001", "ACTIVE", "CLOSED");
+  }
+
+  @Test
+  void delete_alreadyClosed_isIdempotent_andPublishesNothing() {
+    CustomerEntity closed = customer(3L, "CUS-1003", "Closed Customer", "CLOSED");
+    when(customerRepository.findByPublicId("CUS-1003")).thenReturn(Optional.of(closed));
+
+    service.delete("CUS-1003");
+
+    verify(customerRepository, never()).save(any());
+    verify(lifecycleEvents, never()).publishStatusChange(any(), any(), any());
   }
 
   @Test
   void delete_unknownCustomer_fails() {
     assertThrows(UnknownCustomerException.class, () -> service.delete("CUS-9999"));
     verify(customerRepository, never()).save(any());
+    verify(lifecycleEvents, never()).publishStatusChange(any(), any(), any());
   }
 
   private static CustomerEntity customer(Long id, String publicId, String fullName, String status) {

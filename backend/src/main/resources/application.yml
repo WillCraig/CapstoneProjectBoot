@@ -55,6 +55,9 @@ crm:
     topic: crm.customer.interactions.v1
     # Poison records land on <topic>.DLT (DeadLetterPublishingRecoverer default naming).
     consumer-group: crm-interactions-audit
+    # Customer status changes (PROSPECT -> ACTIVE, any -> CLOSED); DLT is <topic>.DLT.
+    lifecycle-topic: crm.customer.lifecycle.v1
+    lifecycle-consumer-group: crm-customer-lifecycle-audit
 management:
   endpoints:
     web:

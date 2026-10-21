@@ -4,6 +4,7 @@ import com.northstar.crm.api.dto.CreateCustomerRequest;
 import com.northstar.crm.api.dto.CustomerResponse;
 import com.northstar.crm.api.dto.UpdateCustomerRequest;
 import com.northstar.crm.domain.CustomerEntity;
+import com.northstar.crm.messaging.CustomerLifecycleEventPublisher;
 import com.northstar.crm.repo.CustomerRepository;
 import java.time.Instant;
 import java.util.List;
@@ -22,9 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerService {
 
   private final CustomerRepository customerRepository;
+  private final CustomerLifecycleEventPublisher lifecycleEvents;
 
-  public CustomerService(CustomerRepository customerRepository) {
+  public CustomerService(
+      CustomerRepository customerRepository, CustomerLifecycleEventPublisher lifecycleEvents) {
     this.customerRepository = customerRepository;
+    this.lifecycleEvents = lifecycleEvents;
   }
 
   @Transactional(readOnly = true)
@@ -73,18 +77,28 @@ public class CustomerService {
     CustomerEntity entity = findCustomer(customerId);
     // 2. Apply the editable fields. Status is the lifecycle lever: this is where Ravi
     //    moves PROSPECT -> ACTIVE when onboarding completes.
+    String fromStatus = entity.getStatus();
     entity.setFullName(request.fullName().trim());
     entity.setStatus(request.status());
-    // 3. Persist and return the stored shape.
-    return toResponse(customerRepository.save(entity));
+    // 3. Persist; a real status change is announced (after commit) as CustomerStatusChangedV1.
+    CustomerResponse saved = toResponse(customerRepository.save(entity));
+    if (!fromStatus.equals(request.status())) {
+      lifecycleEvents.publishStatusChange(entity.getPublicId(), fromStatus, request.status());
+    }
+    return saved;
   }
 
   /** Closes the customer (see class note) while keeping the row and its interaction history. */
   @Transactional
   public void delete(String customerId) {
     CustomerEntity entity = findCustomer(customerId);
+    String fromStatus = entity.getStatus();
+    if ("CLOSED".equals(fromStatus)) {
+      return; // already closed: idempotent, no duplicate lifecycle event
+    }
     entity.setStatus("CLOSED");
     customerRepository.save(entity);
+    lifecycleEvents.publishStatusChange(entity.getPublicId(), fromStatus, "CLOSED");
   }
 
   private CustomerEntity findCustomer(String customerId) {

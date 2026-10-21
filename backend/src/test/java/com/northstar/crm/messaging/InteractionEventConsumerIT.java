@@ -67,7 +67,13 @@ class InteractionEventConsumerIT extends AbstractIntegrationTest {
     long timesApplied =
         processedEvents.findAll().stream().filter(r -> r.getEventId().equals(event.eventId())).count();
     assertEquals(1, timesApplied);
-    assertEquals(2, processedEvents.count());
+    // Count only interaction events: customer lifecycle events from other ITs share this
+    // processed_event table and may land asynchronously while this test runs.
+    long interactionRows =
+        processedEvents.findAll().stream()
+            .filter(r -> CustomerInteractionRecordedV1.TYPE.equals(r.getEventType()))
+            .count();
+    assertEquals(2, interactionRows);
   }
 
   @Test
