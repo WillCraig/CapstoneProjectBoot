@@ -10,16 +10,17 @@ import { InteractionType } from './interaction.model';
   selector: 'app-interaction-create-page',
   standalone: true,
   imports: [FormsModule, RouterLink],
+  styleUrl: './interaction-list-page.component.css',
   template: `
-    <section>
-      <p><a routerLink="/interactions" [queryParams]="{ customerId }">Back to interactions</a></p>
+    <section class="interactions">
+      <p class="eyebrow">Customer activity</p>
       <h2>Record an interaction</h2>
 
       @if (error()) {
-        <p role="alert" data-testid="create-error">{{ error() }}</p>
+        <p class="error" role="alert" data-testid="create-error">{{ error() }}</p>
       }
 
-      <form (ngSubmit)="create()">
+      <form class="interaction-form" (ngSubmit)="create()">
         <label>
           Customer ID
           <input name="customerId" [(ngModel)]="customerId" required data-testid="create-customer-id" />
@@ -47,6 +48,11 @@ import { InteractionType } from './interaction.model';
           {{ saving() ? 'Saving…' : 'Save interaction' }}
         </button>
       </form>
+      <div class="page-actions">
+        <a class="back-button" routerLink="/interactions" [queryParams]="{ customerId }">
+          Back to interactions
+        </a>
+      </div>
     </section>
   `,
 })

@@ -10,10 +10,12 @@ import { Interaction, InteractionType } from './interaction.model';
   selector: 'app-interaction-detail-page',
   standalone: true,
   imports: [DatePipe, FormsModule, RouterLink],
+  styleUrl: './interaction-list-page.component.css',
   template: `
-    <section>
-      <p>
+    <section class="interactions">
+      <p class="page-actions">
         <a
+          class="back-button"
           routerLink="/interactions"
           [queryParams]="{ customerId: interaction()?.customerId }"
           data-testid="back-to-interactions"
@@ -24,11 +26,11 @@ import { Interaction, InteractionType } from './interaction.model';
       <h2>Interaction details</h2>
 
       @if (error()) {
-        <p role="alert" data-testid="detail-error">{{ error() }}</p>
+        <p class="error" role="alert" data-testid="detail-error">{{ error() }}</p>
       }
 
       @if (interaction(); as current) {
-        <dl>
+        <dl class="interaction-facts">
           <dt>Customer</dt>
           <dd data-testid="detail-customer">{{ current.customerId }}</dd>
           <dt>Created</dt>
@@ -39,7 +41,7 @@ import { Interaction, InteractionType } from './interaction.model';
           <dd>{{ current.id }}</dd>
         </dl>
 
-        <form (ngSubmit)="save()">
+        <form class="interaction-form" (ngSubmit)="save()">
           <label>
             Interaction type
             <select name="interactionType" [(ngModel)]="interactionType" data-testid="edit-type">
@@ -62,15 +64,15 @@ import { Interaction, InteractionType } from './interaction.model';
           <button type="submit" data-testid="save-interaction" [disabled]="saving()">
             {{ saving() ? 'Saving…' : 'Save changes' }}
           </button>
-          <button type="button" data-testid="delete-interaction" [disabled]="deleting()" (click)="remove()">
+          <button type="button" class="danger-button" data-testid="delete-interaction" [disabled]="deleting()" (click)="remove()">
             {{ deleting() ? 'Deleting…' : 'Delete interaction' }}
           </button>
         </form>
         @if (saved()) {
-          <p data-testid="saved-message">Changes saved.</p>
+          <p class="success" data-testid="saved-message">Changes saved.</p>
         }
       } @else if (loading()) {
-        <p>Loading…</p>
+        <p class="empty-state" role="status">Loading…</p>
       }
     </section>
   `,
