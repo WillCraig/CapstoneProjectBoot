@@ -71,7 +71,7 @@ class InteractionEventHandlerTest {
         version,
         Instant.now(),
         correlationId,
-        InteractionEventPublisher.DEFAULT_ACTOR,
+        "agent",
         "CUS-1001",
         UUID.randomUUID().toString(),
         "NOTE");

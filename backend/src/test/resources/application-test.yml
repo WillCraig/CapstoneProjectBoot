@@ -1,0 +1,11 @@
+# Test-only values (activated by @ActiveProfiles("test")). Throwaway, not secrets.
+crm:
+  security:
+    jwt:
+      secret: test-only-hs256-signing-key-0123456789abcdef
+      ttl: 5m
+    users:
+      agent:
+        password: agent-test-password
+      admin:
+        password: admin-test-password

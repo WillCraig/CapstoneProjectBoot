@@ -222,14 +222,23 @@ jobs:
         env:
           CRM_DATABASE_USERNAME: ${{ secrets.CRM_DATABASE_USERNAME }}
           CRM_DATABASE_PASSWORD: ${{ secrets.CRM_DATABASE_PASSWORD }}
+          CRM_JWT_SECRET: ${{ secrets.CRM_JWT_SECRET }}
+          CRM_AGENT_PASSWORD: ${{ secrets.CRM_AGENT_PASSWORD }}
+          CRM_ADMIN_PASSWORD: ${{ secrets.CRM_ADMIN_PASSWORD }}
         run: |
           set -euo pipefail
           : "${CRM_DATABASE_USERNAME:?set CRM_DATABASE_USERNAME in the selected GitHub Environment}"
           : "${CRM_DATABASE_PASSWORD:?set CRM_DATABASE_PASSWORD in the selected GitHub Environment}"
+          : "${CRM_JWT_SECRET:?set CRM_JWT_SECRET (>= 32 random bytes) in the selected GitHub Environment}"
+          : "${CRM_AGENT_PASSWORD:?set CRM_AGENT_PASSWORD in the selected GitHub Environment}"
+          : "${CRM_ADMIN_PASSWORD:?set CRM_ADMIN_PASSWORD in the selected GitHub Environment}"
           kubectl create namespace "$CRM_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
           kubectl --namespace "$CRM_NAMESPACE" create secret generic crm-secrets \
             --from-literal="database-username=$CRM_DATABASE_USERNAME" \
             --from-literal="database-password=$CRM_DATABASE_PASSWORD" \
+            --from-literal="jwt-secret=$CRM_JWT_SECRET" \
+            --from-literal="agent-password=$CRM_AGENT_PASSWORD" \
+            --from-literal="admin-password=$CRM_ADMIN_PASSWORD" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Apply manifests
@@ -244,10 +253,12 @@ jobs:
         if: inputs.dry_run == false
         shell: bash
         env:
-          CRM_SMOKE_TOKEN: ${{ secrets.CRM_SMOKE_BEARER_TOKEN }}
+          # The smoke logs in as the synthetic AGENT user; the issued JWT is never printed.
+          CRM_SMOKE_USERNAME: agent
+          CRM_SMOKE_PASSWORD: ${{ secrets.CRM_SMOKE_AGENT_PASSWORD }}
         run: |
           set -euo pipefail
-          : "${CRM_SMOKE_TOKEN:?set CRM_SMOKE_BEARER_TOKEN in the selected GitHub Environment}"
+          : "${CRM_SMOKE_PASSWORD:?set CRM_SMOKE_AGENT_PASSWORD (plain agent password) in the selected GitHub Environment}"
           CRM_BASE_URL="https://${CRM_INGRESS_HOST}" \
           CRM_SMOKE_CUSTOMER_ID=CUS-1001 \
           CRM_SMOKE_CORRELATION_ID=lab-request-001 \

@@ -1,0 +1,14 @@
+# LOCAL DEVELOPMENT ONLY — activate with SPRING_PROFILES_ACTIVE=local.
+# These are throwaway, publicly-known values so a laptop run works out of the box.
+# They are NOT secrets and must never be used in test/stage/prod-like: those
+# environments get CRM_JWT_SECRET / CRM_AGENT_PASSWORD / CRM_ADMIN_PASSWORD from
+# the crm-secrets Kubernetes Secret (see docs/capstone-cicd-runbook.md).
+crm:
+  security:
+    jwt:
+      secret: ${CRM_JWT_SECRET:local-dev-only-hs256-key-NOT-A-SECRET-change-me}
+    users:
+      agent:
+        password: ${CRM_AGENT_PASSWORD:agent-local-dev}
+      admin:
+        password: ${CRM_ADMIN_PASSWORD:admin-local-dev}

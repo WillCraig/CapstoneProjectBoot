@@ -24,7 +24,9 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import com.northstar.crm.support.TestTokens;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -42,9 +44,18 @@ import org.springframework.test.web.servlet.MvcResult;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestTokens.class)
 class InteractionApiIT extends AbstractIntegrationTest {
 
-  private static final String BEARER = "Bearer " + DemoBearerFilter.DEMO_TOKEN;
+  @Autowired TestTokens tokens;
+
+  /** Real signed JWT for the AGENT demo user (was the hardcoded demo token). */
+  private String bearer;
+
+  @BeforeEach
+  void issueAgentToken() {
+    bearer = tokens.agentBearer();
+  }
 
   @Autowired MockMvc mockMvc;
 
@@ -76,7 +87,7 @@ class InteractionApiIT extends AbstractIntegrationTest {
             .perform(
                 post("/api/v1/interactions")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("Authorization", BEARER)
+                    .header("Authorization", bearer)
                     .header("X-Correlation-ID", "lab-request-001")
                     .content(body))
             .andExpect(status().isCreated())
@@ -92,7 +103,7 @@ class InteractionApiIT extends AbstractIntegrationTest {
         .perform(
             get("/api/v1/interactions")
                 .param("customerId", "CUS-1001")
-                .header("Authorization", BEARER))
+                .header("Authorization", bearer))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].customerId").value("CUS-1001"))
         .andExpect(jsonPath("$[0].id").value(id));
@@ -109,7 +120,7 @@ class InteractionApiIT extends AbstractIntegrationTest {
         .perform(
             post("/api/v1/interactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(body))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.status").value(404));
@@ -128,7 +139,7 @@ class InteractionApiIT extends AbstractIntegrationTest {
         .perform(
             post("/api/v1/interactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(body))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.detail").value("Validation failed"));
@@ -147,7 +158,7 @@ class InteractionApiIT extends AbstractIntegrationTest {
               .perform(
                   post("/api/v1/interactions")
                       .contentType(MediaType.APPLICATION_JSON)
-                      .header("Authorization", BEARER)
+                      .header("Authorization", bearer)
                       .header("X-Correlation-ID", correlationId)
                       .content(
                           """
@@ -168,6 +179,7 @@ class InteractionApiIT extends AbstractIntegrationTest {
       assertEquals(1, event.get("eventVersion").asInt());
       assertNotNull(event.get("occurredAt"));
       assertEquals(correlationId, event.get("correlationId").asText());
+      assertEquals("agent", event.get("actor").asText(), "actor is the JWT subject");
       assertEquals("CUS-1001", event.get("customerId").asText());
       assertEquals(interactionId, event.get("interactionId").asText());
       assertEquals("NOTE", event.get("interactionType").asText());
@@ -184,7 +196,7 @@ class InteractionApiIT extends AbstractIntegrationTest {
             .perform(
                 post("/api/v1/interactions")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("Authorization", BEARER)
+                    .header("Authorization", bearer)
                     .header("X-Correlation-ID", "lab-request-001")
                     .content(
                         """
@@ -198,7 +210,7 @@ class InteractionApiIT extends AbstractIntegrationTest {
         .perform(
             put("/api/v1/interactions/{id}", id)
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"interactionType":"EMAIL","summary":"Corrected by agent"}
@@ -212,12 +224,12 @@ class InteractionApiIT extends AbstractIntegrationTest {
         interactionRepository.findById(UUID.fromString(id)).orElseThrow().getSummary());
 
     mockMvc
-        .perform(delete("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .perform(delete("/api/v1/interactions/{id}", id).header("Authorization", bearer))
         .andExpect(status().isNoContent());
     assertTrue(interactionRepository.findById(UUID.fromString(id)).isEmpty());
 
     mockMvc
-        .perform(get("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .perform(get("/api/v1/interactions/{id}", id).header("Authorization", bearer))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.detail").value("Unknown interaction: " + id));
   }

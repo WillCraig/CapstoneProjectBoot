@@ -21,6 +21,12 @@ import com.northstar.crm.service.UnknownCustomerException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import com.northstar.crm.support.TestTokens;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.annotation.Import;
+import com.northstar.crm.security.SecurityConfig;
+import com.northstar.crm.security.TokenService;
+import org.springframework.test.context.ActiveProfiles;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,10 +37,20 @@ import org.springframework.test.web.servlet.MockMvc;
 
 /** HTTP contract for /api/v1/interactions with the service mocked (no DB, no Kafka). */
 @WebMvcTest(InteractionController.class)
+@Import({SecurityConfig.class, TokenService.class, TestTokens.class})
+@ActiveProfiles("test")
 class InteractionControllerTest {
 
   // Demo token from the filter itself; Lab 51 replaces this scheme with JWT.
-  private static final String BEARER = "Bearer " + DemoBearerFilter.DEMO_TOKEN;
+  @Autowired TestTokens tokens;
+
+  /** Real signed JWT for the AGENT demo user (was the hardcoded demo token). */
+  private String bearer;
+
+  @BeforeEach
+  void issueAgentToken() {
+    bearer = tokens.agentBearer();
+  }
 
   @Autowired MockMvc mockMvc;
 
@@ -53,7 +69,7 @@ class InteractionControllerTest {
         .perform(
             post("/api/v1/interactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .header("X-Correlation-ID", "lab-request-001")
                 .content(
                     """
@@ -78,7 +94,7 @@ class InteractionControllerTest {
         .perform(
             post("/api/v1/interactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .header("X-Correlation-ID", "lab-request-001")
                 .content(
                     """
@@ -102,7 +118,7 @@ class InteractionControllerTest {
         .perform(
             post("/api/v1/interactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"customerId":"CUS-1001","interactionType":"NOTE","summary":"   "}
@@ -123,7 +139,7 @@ class InteractionControllerTest {
         .perform(
             post("/api/v1/interactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .header("X-Correlation-ID", "lab-request-001")
                 .content(
                     """
@@ -151,7 +167,7 @@ class InteractionControllerTest {
         .perform(
             get("/api/v1/interactions")
                 .param("customerId", "CUS-1001")
-                .header("Authorization", BEARER))
+                .header("Authorization", bearer))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].customerId").value("CUS-1001"))
         .andExpect(jsonPath("$[0].summary").value("Follow-up"));
@@ -166,7 +182,7 @@ class InteractionControllerTest {
         .perform(
             get("/api/v1/interactions")
                 .param("customerId", "CUS-9999")
-                .header("Authorization", BEARER))
+                .header("Authorization", bearer))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.status").value(404));
   }
@@ -186,7 +202,7 @@ class InteractionControllerTest {
     when(interactionService.update(any(), any())).thenReturn(updated);
 
     mockMvc
-        .perform(get("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .perform(get("/api/v1/interactions/{id}", id).header("Authorization", bearer))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.summary").value("Original"));
 
@@ -194,7 +210,7 @@ class InteractionControllerTest {
         .perform(
             put("/api/v1/interactions/{id}", id)
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"interactionType":"EMAIL","summary":"Corrected summary"}
@@ -206,7 +222,7 @@ class InteractionControllerTest {
         .update(id, new UpdateInteractionRequest("EMAIL", "Corrected summary"));
 
     mockMvc
-        .perform(delete("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .perform(delete("/api/v1/interactions/{id}", id).header("Authorization", bearer))
         .andExpect(status().isNoContent());
     verify(interactionService).delete(id);
   }
@@ -217,7 +233,7 @@ class InteractionControllerTest {
     when(interactionService.get(id)).thenThrow(new InteractionNotFoundException(id));
 
     mockMvc
-        .perform(get("/api/v1/interactions/{id}", id).header("Authorization", BEARER))
+        .perform(get("/api/v1/interactions/{id}", id).header("Authorization", bearer))
         .andExpect(status().isNotFound())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.detail").value("Unknown interaction: " + id));
@@ -231,7 +247,7 @@ class InteractionControllerTest {
         .perform(
             put("/api/v1/interactions/{id}", id)
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"interactionType":"FAX","summary":"Bad update"}

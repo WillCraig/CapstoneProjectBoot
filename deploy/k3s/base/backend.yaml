@@ -53,6 +53,23 @@ spec:
                 secretKeyRef:
                   name: crm-secrets
                   key: database-password
+            # JWT signing key and demo-account passwords (BCrypt hashes recommended).
+            # Values live only in the crm-secrets Secret, created by capstone-deploy.yml.
+            - name: CRM_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: crm-secrets
+                  key: jwt-secret
+            - name: CRM_AGENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: crm-secrets
+                  key: agent-password
+            - name: CRM_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: crm-secrets
+                  key: admin-password
           # Spring Boot Actuator probe groups: readiness includes the PostgreSQL check, so a
           # pod whose DB is unreachable leaves the Service endpoints instead of serving 500s.
           # Liveness does not, so a DB outage never restart-loops otherwise healthy pods.

@@ -1,5 +1,6 @@
 package com.northstar.crm.support;
 
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -12,6 +13,7 @@ import org.testcontainers.utility.DockerImageName;
  * exit). Tests therefore prove the Flyway migration, JPA mappings, and Kafka publishing
  * without depending on whatever happens to be running on local ports 5432/9092.
  */
+@ActiveProfiles("test")
 public abstract class AbstractIntegrationTest {
 
   protected static final PostgreSQLContainer<?> POSTGRES =

@@ -15,6 +15,9 @@ import com.northstar.crm.repo.CustomerRepository;
 import com.northstar.crm.support.AbstractIntegrationTest;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
+import com.northstar.crm.support.TestTokens;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,10 +33,18 @@ import org.springframework.test.web.servlet.MvcResult;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestTokens.class)
 class CustomerApiIT extends AbstractIntegrationTest {
 
-  private static final String BEARER =
-      String.join(" ", "Bearer", DemoBearerFilter.DEMO_TOKEN);
+  @Autowired TestTokens tokens;
+
+  /** Real signed JWT for the AGENT demo user (was the hardcoded demo token). */
+  private String bearer;
+
+  @BeforeEach
+  void issueAgentToken() {
+    bearer = tokens.agentBearer();
+  }
   private static final Set<String> SEEDED = Set.of("CUS-1001", "CUS-1002");
 
   @Autowired MockMvc mockMvc;
@@ -56,7 +67,7 @@ class CustomerApiIT extends AbstractIntegrationTest {
   @Test
   void search_findsSeededAminaByName() throws Exception {
     mockMvc
-        .perform(get("/api/v1/customers").param("q", "amina").header("Authorization", BEARER))
+        .perform(get("/api/v1/customers").param("q", "amina").header("Authorization", bearer))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].customerId").value("CUS-1001"))
         .andExpect(jsonPath("$[0].fullName").value("Amina Khan"))
@@ -70,7 +81,7 @@ class CustomerApiIT extends AbstractIntegrationTest {
             .perform(
                 post("/api/v1/customers")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("Authorization", BEARER)
+                    .header("Authorization", bearer)
                     .content(
                         """
                         {"fullName":"Priya Nair","status":"PROSPECT"}
@@ -98,7 +109,7 @@ class CustomerApiIT extends AbstractIntegrationTest {
         .perform(
             put("/api/v1/customers/{id}", "CUS-1002")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"fullName":"Ravi Singh","status":"ACTIVE"}
@@ -112,7 +123,9 @@ class CustomerApiIT extends AbstractIntegrationTest {
   @Test
   void delete_closesCustomerButRowSurvives() throws Exception {
     mockMvc
-        .perform(delete("/api/v1/customers/{id}", "CUS-1002").header("Authorization", BEARER))
+        .perform(
+            delete("/api/v1/customers/{id}", "CUS-1002")
+                .header("Authorization", tokens.adminBearer())) // closing is ADMIN-only
         .andExpect(status().isNoContent());
 
     CustomerEntity stored = customerRepository.findByPublicId("CUS-1002").orElseThrow();
@@ -122,7 +135,7 @@ class CustomerApiIT extends AbstractIntegrationTest {
   @Test
   void get_unknownCustomer_notFound() throws Exception {
     mockMvc
-        .perform(get("/api/v1/customers/{id}", "CUS-9999").header("Authorization", BEARER))
+        .perform(get("/api/v1/customers/{id}", "CUS-9999").header("Authorization", bearer))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.status").value(404))
         .andExpect(jsonPath("$.detail").value("Unknown customer: CUS-9999"));
@@ -136,7 +149,7 @@ class CustomerApiIT extends AbstractIntegrationTest {
         .perform(
             post("/api/v1/customers")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"fullName":"Priya Nair","status":"VIP"}

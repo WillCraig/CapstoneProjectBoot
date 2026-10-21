@@ -3,6 +3,7 @@ package com.northstar.crm.messaging;
 import com.northstar.crm.domain.InteractionEntity;
 import java.time.Instant;
 import java.util.UUID;
+import com.northstar.crm.security.CurrentActor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,9 +28,6 @@ public class InteractionEventPublisher {
 
   public static final String TOPIC = "crm.customer.interactions.v1";
 
-  /** Placeholder until Lab 51 supplies the authenticated JWT principal. */
-  public static final String DEFAULT_ACTOR = "demo-agent";
-
   private final KafkaTemplate<String, CustomerInteractionRecordedV1> kafkaTemplate;
   private final String topic;
 
@@ -40,8 +38,9 @@ public class InteractionEventPublisher {
     this.topic = topic;
   }
 
+  /** Builds the event now, on the request thread, so {@code actor} is the JWT subject. */
   public void publish(InteractionEntity interaction) {
-    CustomerInteractionRecordedV1 event = toEvent(interaction, DEFAULT_ACTOR);
+    CustomerInteractionRecordedV1 event = toEvent(interaction, CurrentActor.name());
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {

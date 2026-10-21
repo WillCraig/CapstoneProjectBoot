@@ -139,7 +139,7 @@ class InteractionEventConsumerIT extends AbstractIntegrationTest {
         version,
         Instant.now(),
         "it-consumer-001",
-        InteractionEventPublisher.DEFAULT_ACTOR,
+        "agent",
         "CUS-1001",
         UUID.randomUUID().toString(),
         "NOTE");

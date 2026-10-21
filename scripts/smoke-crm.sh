@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Post-deploy smoke for the synthetic Amina fixture. The bearer token is read
-# from the environment and is never printed. The created interaction is
-# soft-deleted at the end; its audit row remains in PostgreSQL by design.
+# Post-deploy smoke for the synthetic Amina fixture: readiness, frontend, login,
+# then create/read/soft-delete one CUS-1001 interaction. Credentials and the
+# issued JWT come from the environment and are never printed. The created
+# interaction is soft-deleted at the end; its audit row remains by design.
+#
+#   CRM_BASE_URL         Ingress origin (or http://localhost:8080 for a laptop run)
+#   CRM_SMOKE_USERNAME   synthetic AGENT user (default: agent)
+#   CRM_SMOKE_PASSWORD   that user's password  -- or --
+#   CRM_SMOKE_TOKEN      an already-issued JWT (skips the login step)
+#   CRM_SMOKE_SKIP_FRONTEND=true  when only the backend is running locally
 : "${CRM_BASE_URL:?set CRM_BASE_URL to the Ingress origin, without a trailing path}"
-: "${CRM_SMOKE_TOKEN:?set CRM_SMOKE_TOKEN from the environment secret}"
 
 CUSTOMER_ID="${CRM_SMOKE_CUSTOMER_ID:-CUS-1001}"
 CORRELATION_ID="${CRM_SMOKE_CORRELATION_ID:-lab-request-001}"
@@ -32,8 +38,29 @@ echo "Checking backend readiness at ${BASE_URL}/actuator/health/readiness"
 readiness="$(curl --fail --silent --show-error "${BASE_URL}/actuator/health/readiness")"
 printf '%s' "$readiness" | grep -Fq '"status":"UP"'
 
-echo "Checking frontend at ${BASE_URL}/"
-curl --fail --silent --show-error "${BASE_URL}/" >/dev/null
+if [[ "${CRM_SMOKE_SKIP_FRONTEND:-false}" != "true" ]]; then
+  echo "Checking frontend at ${BASE_URL}/"
+  curl --fail --silent --show-error "${BASE_URL}/" >/dev/null
+fi
+
+if [[ -z "${CRM_SMOKE_TOKEN:-}" ]]; then
+  : "${CRM_SMOKE_PASSWORD:?set CRM_SMOKE_PASSWORD (or CRM_SMOKE_TOKEN) from the environment secret}"
+  echo "Logging in as ${CRM_SMOKE_USERNAME:-agent}"
+  login_body="$(
+    CRM_SMOKE_USERNAME="${CRM_SMOKE_USERNAME:-agent}" CRM_SMOKE_PASSWORD="$CRM_SMOKE_PASSWORD" python3 -c \
+      'import json,os; print(json.dumps({"username": os.environ["CRM_SMOKE_USERNAME"], "password": os.environ["CRM_SMOKE_PASSWORD"]}))'
+  )"
+  CRM_SMOKE_TOKEN="$(
+    printf '%s' "$login_body" | curl --fail --silent --show-error \
+      --request POST \
+      --header 'Content-Type: application/json' \
+      --header "X-Correlation-ID: ${CORRELATION_ID}" \
+      --data @- \
+      "${BASE_URL}/api/v1/auth/login" \
+      | python3 -c 'import json,sys; print(json.load(sys.stdin)["accessToken"])'
+  )"
+  [[ -n "$CRM_SMOKE_TOKEN" ]]
+fi
 
 echo "Creating a ${CUSTOMER_ID} smoke interaction"
 create_response="$(

@@ -20,6 +20,12 @@ import com.northstar.crm.service.CustomerService;
 import com.northstar.crm.service.UnknownCustomerException;
 import java.time.Instant;
 import java.util.List;
+import com.northstar.crm.support.TestTokens;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.annotation.Import;
+import com.northstar.crm.security.SecurityConfig;
+import com.northstar.crm.security.TokenService;
+import org.springframework.test.context.ActiveProfiles;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,10 +35,19 @@ import org.springframework.test.web.servlet.MockMvc;
 
 /** HTTP contract for /api/v1/customers with the service mocked (no DB, no Kafka). */
 @WebMvcTest(CustomerController.class)
+@Import({SecurityConfig.class, TokenService.class, TestTokens.class})
+@ActiveProfiles("test")
 class CustomerControllerTest {
 
-  private static final String BEARER =
-      String.join(" ", "Bearer", DemoBearerFilter.DEMO_TOKEN);
+  @Autowired TestTokens tokens;
+
+  /** Real signed JWT for the AGENT demo user (was the hardcoded demo token). */
+  private String bearer;
+
+  @BeforeEach
+  void issueAgentToken() {
+    bearer = tokens.agentBearer();
+  }
   private static final Instant CREATED = Instant.parse("2026-10-20T12:00:00Z");
 
   @Autowired MockMvc mockMvc;
@@ -48,7 +63,7 @@ class CustomerControllerTest {
         .perform(
             post("/api/v1/customers")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"fullName":"Priya Nair","status":"PROSPECT"}
@@ -66,7 +81,7 @@ class CustomerControllerTest {
         .perform(
             post("/api/v1/customers")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"fullName":"Priya Nair","status":"CLOSED"}
@@ -85,7 +100,7 @@ class CustomerControllerTest {
         .perform(
             post("/api/v1/customers")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"fullName":"   ","status":"ACTIVE"}
@@ -102,7 +117,7 @@ class CustomerControllerTest {
         .thenReturn(List.of(new CustomerResponse("CUS-1001", "Amina Khan", "ACTIVE", CREATED)));
 
     mockMvc
-        .perform(get("/api/v1/customers").param("q", "amina").header("Authorization", BEARER))
+        .perform(get("/api/v1/customers").param("q", "amina").header("Authorization", bearer))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].customerId").value("CUS-1001"))
         .andExpect(jsonPath("$[0].fullName").value("Amina Khan"));
@@ -114,7 +129,7 @@ class CustomerControllerTest {
         .thenReturn(new CustomerResponse("CUS-1001", "Amina Khan", "ACTIVE", CREATED));
 
     mockMvc
-        .perform(get("/api/v1/customers/{id}", "CUS-1001").header("Authorization", BEARER))
+        .perform(get("/api/v1/customers/{id}", "CUS-1001").header("Authorization", bearer))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.fullName").value("Amina Khan"))
         .andExpect(jsonPath("$.status").value("ACTIVE"));
@@ -125,7 +140,7 @@ class CustomerControllerTest {
     when(customerService.get("CUS-9999")).thenThrow(new UnknownCustomerException("CUS-9999"));
 
     mockMvc
-        .perform(get("/api/v1/customers/{id}", "CUS-9999").header("Authorization", BEARER))
+        .perform(get("/api/v1/customers/{id}", "CUS-9999").header("Authorization", bearer))
         .andExpect(status().isNotFound())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.detail").value("Unknown customer: CUS-9999"))
@@ -141,7 +156,7 @@ class CustomerControllerTest {
         .perform(
             put("/api/v1/customers/{id}", "CUS-1002")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"fullName":"Ravi Singh","status":"ACTIVE"}
@@ -151,7 +166,9 @@ class CustomerControllerTest {
     verify(customerService).update("CUS-1002", new UpdateCustomerRequest("Ravi Singh", "ACTIVE"));
 
     mockMvc
-        .perform(delete("/api/v1/customers/{id}", "CUS-1002").header("Authorization", BEARER))
+        .perform(
+            delete("/api/v1/customers/{id}", "CUS-1002")
+                .header("Authorization", tokens.adminBearer())) // closing is ADMIN-only
         .andExpect(status().isNoContent());
     verify(customerService).delete("CUS-1002");
   }
@@ -162,7 +179,7 @@ class CustomerControllerTest {
         .perform(
             put("/api/v1/customers/{id}", "CUS-1002")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", BEARER)
+                .header("Authorization", bearer)
                 .content(
                     """
                     {"fullName":"Ravi Singh","status":"VIP"}

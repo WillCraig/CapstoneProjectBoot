@@ -44,6 +44,15 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     return notFound(ex.getMessage(), request);
   }
 
+  @ExceptionHandler(InvalidCredentialsException.class)
+  public ResponseEntity<ProblemDetail> invalidCredentials(
+      InvalidCredentialsException ex, HttpServletRequest request) {
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    problem.setTitle("Unauthorized");
+    problem.setInstance(URI.create(request.getRequestURI()));
+    return problemResponse(problem);
+  }
+
   private static ResponseEntity<ProblemDetail> notFound(String detail, HttpServletRequest request) {
     ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, detail);
     problem.setTitle("Not Found");

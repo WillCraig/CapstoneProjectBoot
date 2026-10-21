@@ -11,6 +11,11 @@ import static org.mockito.Mockito.when;
 
 import com.northstar.crm.domain.CustomerEntity;
 import com.northstar.crm.domain.InteractionEntity;
+import com.northstar.crm.security.CurrentActor;
+import java.util.List;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -45,6 +50,11 @@ class InteractionEventPublisherTest {
   }
 
   @AfterEach
+  void clearSecurityContext() {
+    SecurityContextHolder.clearContext();
+  }
+
+  @AfterEach
   void clearSynchronization() {
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
       TransactionSynchronizationManager.clearSynchronization();
@@ -65,7 +75,7 @@ class InteractionEventPublisherTest {
     assertEquals(1, event.eventVersion());
     assertNotNull(event.occurredAt());
     assertEquals("lab-request-001", event.correlationId());
-    assertEquals(InteractionEventPublisher.DEFAULT_ACTOR, event.actor());
+    assertEquals(CurrentActor.SYSTEM, event.actor(), "no authenticated user on this thread");
     assertEquals("CUS-1001", event.customerId());
     assertEquals(interaction.getId().toString(), event.interactionId());
     assertEquals("NOTE", event.interactionType());
@@ -81,5 +91,20 @@ class InteractionEventPublisherTest {
     TransactionSynchronizationManager.getSynchronizations()
         .forEach(sync -> sync.afterCommit());
     verify(kafkaTemplate).send(eq("crm.customer.interactions.v1"), eq("CUS-1001"), any());
+  }
+
+  @Test
+  void publish_usesAuthenticatedUsernameAsActor() {
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            new UsernamePasswordAuthenticationToken(
+                "agent", null, List.of(new SimpleGrantedAuthority("ROLE_AGENT"))));
+
+    publisher.publish(interaction);
+
+    ArgumentCaptor<CustomerInteractionRecordedV1> sent =
+        ArgumentCaptor.forClass(CustomerInteractionRecordedV1.class);
+    verify(kafkaTemplate).send(eq("crm.customer.interactions.v1"), eq("CUS-1001"), sent.capture());
+    assertEquals("agent", sent.getValue().actor());
   }
 }
