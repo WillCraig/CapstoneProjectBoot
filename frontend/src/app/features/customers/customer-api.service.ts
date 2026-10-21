@@ -2,7 +2,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CreateCustomerRequest, Customer, UpdateCustomerRequest } from './customer.model';
+import {
+  CreateCustomerRequest,
+  Customer,
+  UpdateCustomerRequest,
+} from './customer.model';
 
 /** Typed gateway to the customer API; components never build URLs themselves. */
 @Injectable({ providedIn: 'root' })
@@ -16,20 +20,28 @@ export class CustomerApiService {
     return this.http.get<Customer[]>(this.base, { params });
   }
 
+  list(): Observable<Customer[]> {
+    return this.search();
+  }
+
   create(body: CreateCustomerRequest): Observable<Customer> {
     return this.http.post<Customer>(this.base, body);
   }
 
   getById(customerId: string): Observable<Customer> {
-    return this.http.get<Customer>(`${this.base}/${customerId}`);
+    return this.http.get<Customer>(`${this.base}/${encodeURIComponent(customerId)}`);
+  }
+
+  get(customerId: string): Observable<Customer> {
+    return this.getById(customerId);
   }
 
   update(customerId: string, body: UpdateCustomerRequest): Observable<Customer> {
-    return this.http.put<Customer>(`${this.base}/${customerId}`, body);
+    return this.http.put<Customer>(`${this.base}/${encodeURIComponent(customerId)}`, body);
   }
 
   /** Closing a customer is the delete path; the row and its interactions are kept. */
   delete(customerId: string): Observable<void> {
-    return this.http.delete<void>(`${this.base}/${customerId}`);
+    return this.http.delete<void>(`${this.base}/${encodeURIComponent(customerId)}`);
   }
 }

@@ -19,7 +19,7 @@ describe('LoginPageComponent', () => {
     spyOn(router, 'navigate').and.resolveTo(true);
   });
 
-  it('signs in and lands on customer search', () => {
+  it('signs in and lands on the home screen', () => {
     auth.login.and.returnValue(
       of({ accessToken: 't', tokenType: 'Bearer', expiresIn: 900, username: 'agent', roles: ['AGENT'] }),
     );
@@ -30,7 +30,7 @@ describe('LoginPageComponent', () => {
     page.login();
 
     expect(auth.login).toHaveBeenCalledWith('agent', 'pw');
-    expect(router.navigate).toHaveBeenCalledWith(['/customers']);
+    expect(router.navigate).toHaveBeenCalledWith(['/home']);
     expect(page.password).toBe('');
   });
 

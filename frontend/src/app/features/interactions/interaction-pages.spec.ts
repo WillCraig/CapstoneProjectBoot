@@ -6,6 +6,7 @@ import { InteractionDetailPageComponent } from './interaction-detail-page.compon
 import { InteractionListPageComponent } from './interaction-list-page.component';
 import { InteractionApiService } from './interaction-api.service';
 import { Interaction } from './interaction.model';
+import { CustomerApiService } from '../customers/customer-api.service';
 
 const sample: Interaction = {
   id: '3f18537f-28b9-45b8-ae72-7e7a33d55250',
@@ -43,6 +44,7 @@ describe('interaction pages', () => {
       providers: [
         provideRouter([]),
         { provide: InteractionApiService, useValue: api },
+        { provide: CustomerApiService, useValue: { list: () => of([]) } },
         {
           provide: ActivatedRoute,
           useValue: {

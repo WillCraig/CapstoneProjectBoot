@@ -1,68 +1,39 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { CustomerChoicesPageComponent } from './features/customers/customer-choices-page.component';
+import { CustomerDetailPageComponent } from './features/customers/customer-detail-page.component';
+import { CustomerFormPageComponent } from './features/customers/customer-form-page.component';
+import { CustomerLookupPageComponent } from './features/customers/customer-lookup-page.component';
+import { CustomerManagePageComponent } from './features/customers/customer-manage-page.component';
+import { InteractionCreatePageComponent } from './features/interactions/interaction-create-page.component';
+import { InteractionDetailPageComponent } from './features/interactions/interaction-detail-page.component';
+import { InteractionListPageComponent } from './features/interactions/interaction-list-page.component';
+import { LoginPageComponent } from './features/login/login-page.component';
 
 export const routes: Routes = [
+  { path: 'login', component: LoginPageComponent },
+  { path: 'home', component: CustomerChoicesPageComponent, canActivate: [authGuard] },
+  { path: 'customers', component: CustomerLookupPageComponent, canActivate: [authGuard] },
+  { path: 'customers/new', component: CustomerFormPageComponent, canActivate: [authGuard] },
+  { path: 'customers/:id/edit', component: CustomerFormPageComponent, canActivate: [authGuard] },
+  { path: 'customers/manage', component: CustomerManagePageComponent, canActivate: [authGuard] },
   {
-    path: 'login',
-    loadComponent: () =>
-      import('./features/login/login-page.component').then((m) => m.LoginPageComponent),
-  },
-  {
-    path: 'customers',
+    path: 'customers/manage/:customerId',
+    component: CustomerManagePageComponent,
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/customers/customer-list-page.component').then(
-        (m) => m.CustomerListPageComponent,
-      ),
   },
-  {
-    path: 'customers/new',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/customers/customer-form-page.component').then(
-        (m) => m.CustomerFormPageComponent,
-      ),
-  },
-  {
-    path: 'customers/:id',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/customers/customer-detail-page.component').then(
-        (m) => m.CustomerDetailPageComponent,
-      ),
-  },
-  {
-    path: 'customers/:id/edit',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/customers/customer-form-page.component').then(
-        (m) => m.CustomerFormPageComponent,
-      ),
-  },
-  {
-    path: 'interactions',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/interactions/interaction-list-page.component').then(
-        (m) => m.InteractionListPageComponent,
-      ),
-  },
+  { path: 'customers/:id', component: CustomerDetailPageComponent, canActivate: [authGuard] },
+  { path: 'interactions', component: InteractionListPageComponent, canActivate: [authGuard] },
   {
     path: 'interactions/new',
+    component: InteractionCreatePageComponent,
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/interactions/interaction-create-page.component').then(
-        (m) => m.InteractionCreatePageComponent,
-      ),
   },
   {
     path: 'interactions/:id',
+    component: InteractionDetailPageComponent,
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/interactions/interaction-detail-page.component').then(
-        (m) => m.InteractionDetailPageComponent,
-      ),
   },
-  { path: '', pathMatch: 'full', redirectTo: 'customers' },
-  { path: '**', redirectTo: 'customers' },
+  { path: '', pathMatch: 'full', redirectTo: 'home' },
+  { path: '**', redirectTo: 'home' },
 ];

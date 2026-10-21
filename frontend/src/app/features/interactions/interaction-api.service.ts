@@ -24,14 +24,14 @@ export class InteractionApiService {
   }
 
   getById(id: string): Observable<Interaction> {
-    return this.http.get<Interaction>(`${this.base}/${id}`);
+    return this.http.get<Interaction>(`${this.base}/${encodeURIComponent(id)}`);
   }
 
   update(id: string, body: UpdateInteractionRequest): Observable<Interaction> {
-    return this.http.put<Interaction>(`${this.base}/${id}`, body);
+    return this.http.put<Interaction>(`${this.base}/${encodeURIComponent(id)}`, body);
   }
 
   delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.base}/${id}`);
+    return this.http.delete<void>(`${this.base}/${encodeURIComponent(id)}`);
   }
 }

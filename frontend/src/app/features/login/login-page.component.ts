@@ -9,47 +9,8 @@ import { AuthApiService } from '../../core/auth/auth-api.service';
   selector: 'app-login-page',
   standalone: true,
   imports: [FormsModule],
-  template: `
-    <section>
-      <h2>Sign in</h2>
-      <p>
-        Demo users: <code>agent</code> (AGENT) and <code>admin</code> (AGENT + ADMIN). Passwords
-        come from the backend configuration. The token is kept in memory only.
-      </p>
-      <p>XSS probe (must stay text): {{ xssProbe }}</p>
-
-      @if (error()) {
-        <p role="alert" data-testid="login-error">{{ error() }}</p>
-      }
-
-      <form (ngSubmit)="login()">
-        <label>
-          Username
-          <input
-            name="username"
-            [(ngModel)]="username"
-            required
-            autocomplete="username"
-            data-testid="login-username"
-          />
-        </label>
-        <label>
-          Password
-          <input
-            name="password"
-            type="password"
-            [(ngModel)]="password"
-            required
-            autocomplete="current-password"
-            data-testid="login-password"
-          />
-        </label>
-        <button type="submit" data-testid="login-submit" [disabled]="busy()">
-          {{ busy() ? 'Signing in…' : 'Sign in' }}
-        </button>
-      </form>
-    </section>
-  `,
+  templateUrl: './login-page.component.html',
+  styleUrl: './login-page.component.css',
 })
 export class LoginPageComponent {
   private readonly auth = inject(AuthApiService);
@@ -69,7 +30,7 @@ export class LoginPageComponent {
       next: () => {
         this.password = '';
         this.busy.set(false);
-        void this.router.navigate(['/customers']);
+        void this.router.navigate(['/home']);
       },
       error: (err: unknown) => {
         this.password = '';
