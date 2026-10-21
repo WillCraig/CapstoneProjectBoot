@@ -1,0 +1,41 @@
+
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #172033;
+  background: #f4f6fa;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 2rem;
+  background: #152b4a;
+  color: #fff;
+}
+
+.brand {
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.app-subtitle {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.app-main {
+  width: min(1100px, calc(100% - 2rem));
+  margin: 2rem auto;
+}
+
+.app-footer {
+  padding: 1.5rem;
+  color: #64748b;
+  text-align: center;
+  font-size: 0.85rem;
+}

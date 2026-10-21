@@ -1,0 +1,88 @@
+
+<section class="page">
+  <a
+    class="back-link"
+    [routerLink]="['/customers', customerId, 'interactions']"
+  >
+    ← Back to timeline
+  </a>
+
+  <header>
+    <p class="eyebrow">CUSTOMER ACTIVITY</p>
+    <h1>{{ isEditMode ? 'Edit interaction' : 'Record an interaction' }}</h1>
+    <p>Customer: <strong>{{ customerId }}</strong></p>
+  </header>
+
+  @if (loading && isEditMode && !summary) {
+  <p role="status" aria-live="polite">Loading interaction…</p>
+  } @else {
+  <form (ngSubmit)="submit()" #interactionForm="ngForm">
+    <div class="field">
+      <label for="channel">Interaction channel</label>
+      <select
+        id="channel"
+        name="channel"
+        [(ngModel)]="channel"
+        required
+      >
+        @for (option of channels; track option) {
+        <option [value]="option">{{ option }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="summary">Summary</label>
+      <textarea
+        id="summary"
+        name="summary"
+        [(ngModel)]="summary"
+        #summaryInput="ngModel"
+        required
+        maxlength="2000"
+        rows="6"
+        placeholder="Describe the customer interaction…"
+        aria-describedby="summary-help summary-error"
+      ></textarea>
+
+      <div class="field-meta">
+        <small id="summary-help">
+          Required. Maximum 2,000 characters.
+        </small>
+        <small>{{ summary.length }}/2000</small>
+      </div>
+
+      @if (summaryInput.invalid && summaryInput.touched) {
+      <p class="field-error" id="summary-error">
+        Enter a summary of up to 2,000 characters.
+      </p>
+      }
+    </div>
+
+    @if (errorMessage) {
+    <div class="alert error" role="alert">
+      {{ errorMessage }}
+    </div>
+    }
+
+    <div class="actions">
+      <button
+        type="submit"
+        [disabled]="loading || interactionForm.invalid"
+      >
+        {{
+        loading
+        ? 'Saving…'
+        : isEditMode
+        ? 'Save changes'
+        : 'Record interaction'
+        }}
+      </button>
+
+      <a [routerLink]="['/customers', customerId, 'interactions']">
+        Cancel
+      </a>
+    </div>
+  </form>
+  }
+</section>

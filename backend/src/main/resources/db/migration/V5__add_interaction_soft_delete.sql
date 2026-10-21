@@ -1,0 +1,2 @@
+ALTER TABLE customer_interactions
+    ADD COLUMN deleted BOOLEAN NOT NULL DEFAULT FALSE;

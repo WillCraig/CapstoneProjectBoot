@@ -1,0 +1,108 @@
+
+.page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.page-heading h1 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 2rem;
+}
+
+.page-heading p {
+  color: #64748b;
+}
+
+.eyebrow,
+.customer-id {
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.search-form,
+.customer-card {
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.search-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.search-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  font: inherit;
+}
+
+button {
+  padding: 0.8rem 1.1rem;
+  border: 0;
+  border-radius: 7px;
+  background: #1d4ed8;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.customer-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.customer-card h2 {
+  margin-bottom: 0.25rem;
+}
+
+.customer-card p {
+  color: #64748b;
+}
+
+.status-badge {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.alert.error {
+  padding: 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.status {
+  color: #475569;
+}
+
+@media (max-width: 520px) {
+  .search-row {
+    flex-direction: column;
+  }
+}

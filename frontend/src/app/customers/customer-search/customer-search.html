@@ -1,0 +1,45 @@
+
+<section class="page">
+  <div class="page-heading">
+    <p class="eyebrow">CUSTOMER MANAGEMENT</p>
+    <h1>Find a customer</h1>
+    <p>Search by customer ID to view their profile and interaction history.</p>
+  </div>
+
+  <form class="search-form" (ngSubmit)="search()">
+    <label for="customerId">Customer ID</label>
+    <div class="search-row">
+      <input
+        id="customerId"
+        name="customerId"
+        [(ngModel)]="customerId"
+        placeholder="e.g. CUS-1001"
+        autocomplete="off"
+        required
+      />
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Searching…' : 'Search' }}
+      </button>
+    </div>
+  </form>
+
+  <p class="status" role="status" aria-live="polite" [hidden]="!loading">
+    Searching for customer…
+  </p>
+
+  <div class="alert error" role="alert" [hidden]="!errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  @if (customer; as result) {
+  <article class="customer-card">
+    <div>
+      <span class="customer-id">{{ result.customerId }}</span>
+      <h2>{{ result.fullName }}</h2>
+      <p>{{ result.email }}</p>
+    </div>
+    <span class="status-badge">{{ result.status }}</span>
+    <button type="button" (click)="openProfile()">View profile</button>
+  </article>
+  }
+</section>

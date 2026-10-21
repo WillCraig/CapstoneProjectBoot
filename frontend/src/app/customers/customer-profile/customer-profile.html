@@ -1,0 +1,51 @@
+
+<section class="page">
+  <a routerLink="/customers" class="back-link">← Back to customer search</a>
+
+  @if (loading) {
+  <p role="status" aria-live="polite">Loading customer profile…</p>
+  }
+
+  @if (errorMessage) {
+  <div class="alert error" role="alert">{{ errorMessage }}</div>
+  }
+
+  @if (customer; as result) {
+  <header class="profile-header">
+    <div>
+      <p class="eyebrow">CUSTOMER PROFILE</p>
+      <h1>{{ result.fullName }}</h1>
+      <p class="customer-id">{{ result.customerId }}</p>
+    </div>
+    <span class="status-badge">{{ result.status }}</span>
+  </header>
+
+  <article class="details-card">
+    <h2>Contact details</h2>
+    <dl>
+      <dt>Email</dt>
+      <dd>{{ result.email }}</dd>
+
+      <dt>Customer ID</dt>
+      <dd>{{ result.customerId }}</dd>
+
+      <dt>Status</dt>
+      <dd>{{ result.status }}</dd>
+
+      @if (result.createdAt) {
+      <dt>Created</dt>
+      <dd>{{ result.createdAt | date: 'medium' }}</dd>
+      }
+    </dl>
+  </article>
+
+  <nav class="actions" aria-label="Customer actions">
+    <a [routerLink]="['/customers', result.customerId, 'interactions']">
+      View interaction timeline
+    </a>
+    <a [routerLink]="['/customers', result.customerId, 'interactions', 'new']">
+      Record interaction
+    </a>
+  </nav>
+  }
+</section>

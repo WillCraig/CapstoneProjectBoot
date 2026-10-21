@@ -1,0 +1,44 @@
+
+<section class="timeline">
+  @if (loading) {
+  <p>Loading interactions...</p>
+  } @else if (errorMessage) {
+  <p class="error-message">{{ errorMessage }}</p>
+  } @else if (interactions.length === 0) {
+  <p>No interactions recorded yet.</p>
+  } @else {
+  @for (item of interactions; track item.interactionId) {
+  <article class="interaction-card">
+    <div class="card-top">
+      <span class="channel">{{ item.channel }}</span>
+      <time>{{ item.createdAt | date: 'medium' }}</time>
+    </div>
+
+    <p>{{ item.summary }}</p>
+    <small>Interaction ID: {{ item.interactionId }}</small>
+
+    <div class="card-actions">
+      <a
+        [routerLink]="[
+              '/customers',
+              customerId,
+              'interactions',
+              item.interactionId,
+              'edit'
+            ]"
+      >
+        Edit
+      </a>
+
+      <button
+        type="button"
+        class="delete-button"
+        (click)="deleteInteraction(item)"
+      >
+        Delete
+      </button>
+    </div>
+  </article>
+  }
+  }
+</section>
