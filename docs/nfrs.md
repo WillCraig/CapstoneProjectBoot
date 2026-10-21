@@ -1,41 +1,64 @@
 # Non-functional requirements
 
-Every target has a number and a way to check it. Where the team or instructor still owes us the number, the line says **FILL IN** with a suggestion. Evidence gets linked from `defense/evidence-index.md` as it lands.
+Every target has a **number**, a **way to check it**, and the **lab that proves it**. The status column says what's already proven and where. "Not yet evidenced" means the check exists but hasn't been run in the target environment yet. Anything not met by the defense goes into the [risk register](risk-register.md) with an owner and a date.
+
+Status as of 2026-10-21, on branch `will_work`.
 
 ## Security
 
-| Target | How we check | Lab |
-| --- | --- | --- |
-| 100% of `/api/**` calls without a valid JWT get `401`; wrong role gets `403` | Auth tests for no token, bad token, wrong role; repeated in smoke | 51 |
-| 0 secrets, tokens, kubeconfigs, `.env`, or `*.tfstate` in git | `.gitignore`, diff review per the AI usage plan, secret scan in CI | 48–51 |
-| 0 open findings at or above the scan threshold. **FILL IN:** threshold (suggest High) | Dependency and image scan in Actions | 51 |
+| ID | Target | How we check | Lab | Status |
+| --- | --- | --- | --- | --- |
+| NFR-S1 | 100% of `/api/**` calls without a valid JWT (missing, expired, forged, garbage) get `401` Problem Details | `SecurityIT` (`noToken_…`, `expiredToken_is401`, `tokenSignedWithAnotherKey_…`, `garbageToken_is401`), `CustomerApiIT.search_withoutBearer_unauthorized`, `InteractionApiIT.list_withoutBearer_unauthorized` | 51 | Met (CI green on PR #22) |
+| NFR-S2 | 100% of ADMIN-only actions done by an AGENT get `403` and change nothing: `DELETE` a customer, close or reopen through `PUT`, `/actuator/metrics` | `SecurityIT.agentClosingCustomer_…`, `agentClosingCustomerThroughPut_…`, `agentReopeningClosedCustomer_…`, `healthIsPublic_butMetricsAreAdminOnly`, plus `CustomerServiceTest` | 51 | Met |
+| NFR-S3 | Access tokens live at most **15 minutes**. The app **refuses to start** without `CRM_JWT_SECRET` of at least 32 bytes | `crm.security.jwt.ttl: 15m` in `application.yml`; startup check in `SecurityConfig.jwtSigningKey` | 51 | Met |
+| NFR-S4 | **0** secrets, tokens, kubeconfigs, `.env` files or `*.tfstate` in git history | `.gitignore` (root and `infra/terraform/`), the Trivy `secret` scanner on every CI run, and a full-history secret scan before any visibility change | 48–51 | Met (history scan on 2026-10-21 found none) |
+| NFR-S5 | **0** unaccepted fixable HIGH/CRITICAL findings in dependencies and images by the defense | Trivy repository and image reports (artifacts `trivy-repository-<sha>`, `trivy-images-<sha>`) | 51 | **Not met yet.** Trivy reports but doesn't block (`exit-code: "0"`). Exit condition is in the CI/CD runbook (R-08) |
+| NFR-S6 | CodeQL (Java + TypeScript) runs on every PR with **0** open alerts | `codeql.yml` run results | 51 | **Blocked.** Upload fails on the private repo (R-03) |
 
 ## Traceability
 
-| Target | How we check | Lab |
-| --- | --- | --- |
-| 100% of interaction creates store the request's correlation id (default `lab-request-001`) in the row, the event, and the log line | Integration test, then console consumer and log grep in the demo | 49 |
-| 100% of deployed pods run an image pinned by digest, and each digest maps to one Actions run | `kubectl get pods -o jsonpath` against the run summary | 51 |
+| ID | Target | How we check | Lab | Status |
+| --- | --- | --- | --- | --- |
+| NFR-T1 | 100% of new interactions store the request's correlation id in the row **and** the event. The value comes from the `X-Correlation-Id` header, else the body, else `lab-request-001` | `InteractionServiceTest.create_correlationPrecedence_headerThenRequestThenDefault`, `InteractionApiIT.createAndList_forAmina_persistsRow` | 49 | Met |
+| NFR-T2 | 100% of API log lines for a request carry `correlationId=…`, and the id is echoed in the response header | Log pattern in `application.yml`, `CorrelationIdFilterTest`, `HealthEndpointsIT.correlationId_isEchoedOnResponses` | 49/51 | Met. Two caveats are in R-10 and R-18 |
+| NFR-T3 | 100% of deployed pods run an image pinned by `sha256` digest that maps to one Capstone CI run | `capstone-deploy` only accepts `sha256:<64 hex>`. Compare `kubectl get pods -o jsonpath='{..image}'` with the `image-digests-<sha>` artifact | 51 | Not yet evidenced (no deploy yet, R-01) |
 
 ## Recoverability
 
-| Target | How we check | Lab |
-| --- | --- | --- |
-| Roll back to the previous digest in **FILL IN** minutes (suggest 10) | Timed rollback rehearsal before the stage-to-prod-like gate | 51 |
-| Schema rebuilds from an empty Postgres 16 with 0 manual SQL steps | Fresh `docker compose up postgres`, start the API, Flyway applies | 50 |
-| 0 committed interactions lost while Kafka is down | Stop Kafka, POST for `CUS-1001`, row is still there | 49 |
-| Data loss window **FILL IN** (depends on where Postgres runs) | Restore drill, once hosting is known | 51 |
+| ID | Target | How we check | Lab | Status |
+| --- | --- | --- | --- | --- |
+| NFR-R1 | Roll back to the previous digest pair in **10 minutes or less**, from deciding to roll back to the smoke going green again | Timed rehearsal: a new approved Capstone Deploy run with the previous digests (runbook "Rollback") | 51 | Not yet evidenced (R-01) |
+| NFR-R2 | The schema rebuilds from an empty PostgreSQL 16 with **0** manual SQL steps | Every integration-test run starts an empty Testcontainers `postgres:16` and Flyway applies V1–V3 | 49–50 | Met |
+| NFR-R3 | **0** committed interactions lost while Kafka is down | Experiment: stop Kafka (`docker compose stop kafka`), `POST` for `CUS-1001`, then check the row in PostgreSQL | 49 | **Not yet tested.** We expect the row to stay, but the HTTP call may be slow or return an error while the Kafka client waits (R-06). Team to confirm by running it |
+| NFR-R4 | Data-loss window (backup point) | Restore drill, once database hosting is known | 51 | **Team to confirm.** Depends on who runs PostgreSQL on the cluster |
+| NFR-R5 | A poison or unknown-version event never blocks the topic. It lands on `.DLT` after at most **3** attempts | `InteractionEventConsumerIT.unsupportedVersion_goesToDeadLetterTopic_…`, `CustomerLifecycleEventConsumerIT.unsupportedVersion_…` | 49 | Met for bad versions. A non-JSON record is not covered (R-12) |
+
+## Correctness and idempotency
+
+| ID | Target | How we check | Lab | Status |
+| --- | --- | --- | --- | --- |
+| NFR-C1 | Invalid input or an unknown customer creates **0** rows and **0** events | `InteractionApiIT.create_unknownCustomer_notFound_andNothingPersisted`, `create_invalidType_badRequest_andNothingPersisted`, `InteractionServiceTest.create_unknownCustomer_neverPersistsOrPublishes` | 49 | Met |
+| NFR-C2 | Redelivering the same event causes **0** extra side effects | `InteractionEventConsumerIT.duplicateDelivery_appliesOnlyOnce`, `CustomerLifecycleEventConsumerIT.duplicateDelivery_isAuditedOnce` | 49 | Met |
 
 ## Performance
 
-| Target | How we check | Lab |
-| --- | --- | --- |
-| p95 under **FILL IN** ms (suggest 500) for `POST` and `GET /api/v1/interactions` at **FILL IN** concurrent users (suggest 10) on synthetic data | Short scripted load run against stage, results in `reports/` | 51 |
+| ID | Target | How we check | Lab | Status |
+| --- | --- | --- | --- | --- |
+| NFR-P1 | p95 **500 ms or less** for `POST /api/v1/interactions` and `GET /api/v1/interactions?customerId=CUS-1001`, over **100** sequential calls with a valid token, synthetic data, local Compose | A timed run of 100 calls, e.g. a JMeter or Postman collection runner, or a curl loop. Results saved in `reports/` | 50–51 | **Not measured yet.** Team to confirm the tool and who runs it |
+| NFR-P2 | Login responds in **1 s or less** (one BCrypt check) | Same timed run, 20 logins | 51 | Not measured yet |
 
 ## Operability
 
-| Target | How we check | Lab |
-| --- | --- | --- |
-| `/actuator/health` readiness reports UP within **FILL IN** seconds of pod start (suggest 60) | Readiness probe and `kubectl rollout status` | 51 |
-| Post-deploy smoke finishes in under **FILL IN** minutes (suggest 2), and any non-2xx for `CUS-1001` fails the deploy | Smoke job in the CD run | 51 |
-| 100% of API request log lines carry the correlation id | Grep logs for `lab-request-001` after the demo calls | 49 |
+| ID | Target | How we check | Lab | Status |
+| --- | --- | --- | --- | --- |
+| NFR-O1 | Backend readiness reports `UP` within **150 s** of pod start (startup probe: 30 × 5 s), and the rollout finishes within the deploy's **300 s** timeout | Probes in `deploy/k3s/base/backend.yaml`; `kubectl rollout status --timeout=300s` in `capstone-deploy` | 51 | Probe endpoints proven by `HealthEndpointsIT`. In-cluster timing not yet evidenced |
+| NFR-O2 | A database outage takes the pod out of service (readiness `DOWN`) **without** restarting it (liveness ignores the DB) | Health groups in `application.yml` (readiness = `readinessState,db`; liveness = `livenessState`) | 51 | Configured. Forced-fault demo not yet recorded |
+| NFR-O3 | The post-deploy smoke finishes in **under 2 minutes**, and any failed step fails the deploy job | `scripts/smoke-crm.sh` (`set -euo pipefail`): readiness, frontend, login, then create, read and soft-delete a `CUS-1001` interaction | 51 | Local smoke passed (`reports/local-test-run-2026-10-21.md`). Cluster not yet |
+| NFR-O4 | PR checks (Capstone CI) finish in **under 10 minutes** | Actions run duration | 51 | Met. About 3–4 minutes per run on 2026-10-21 |
+| NFR-O5 | `mvn -B clean verify` is green twice in a row with the same results | Two back-to-back runs, locally and in CI | 49 | Partly. Capstone CI was green on 4 runs in a row on 2026-10-21 (different commits). A back-to-back double run on one commit isn't recorded yet |
+
+## Accessibility
+
+| ID | Target | How we check | Lab | Status |
+| --- | --- | --- | --- | --- |
+| NFR-A1 | Login, customer and interaction forms are usable by keyboard only. Every input has a `<label>`, and errors are announced (`role="alert"` / `aria-live`) | Templates use labels and `aria-live` regions; plus a manual keyboard-only pass of the Selenium happy path | 50 | Markup in place. **Keyboard pass not recorded yet.** Team to confirm who does it |
