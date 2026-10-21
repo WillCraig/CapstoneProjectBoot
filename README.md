@@ -45,6 +45,47 @@ npm ci
 npx ng serve                  # UI on http://localhost:4200
 ```
 
+#### Windows (PowerShell)
+
+Same steps, with Docker Desktop running. PowerShell sets environment variables with
+`$env:NAME = "value"`; they last until that terminal is closed.
+
+```powershell
+Copy-Item .env.example .env   # local only, never commit .env
+docker compose up -d          # Postgres 16 + single-node Kafka
+```
+
+Backend (first terminal):
+
+```powershell
+cd backend
+mvn clean verify
+$env:SPRING_PROFILES_ACTIVE = "local"
+$env:SERVER_PORT = "8081"
+mvn spring-boot:run           # API on http://localhost:8081
+```
+
+Frontend (second terminal):
+
+```powershell
+cd frontend
+npm ci
+npx ng serve                  # UI on http://localhost:4200
+```
+
+Selenium e2e (third terminal for the server, then `npm run e2e` in another):
+
+```powershell
+cd frontend
+$env:CRM_E2E_API_TARGET = "http://localhost:8081"
+npm run e2e:serve
+```
+
+Find what is holding a port (the Windows version of the `lsof` check below):
+`Get-NetTCPConnection -State Listen -LocalPort 5432,9092,8081,4200 | Select-Object LocalPort, OwningProcess`,
+then `Get-Process -Id <OwningProcess>`.
+`scripts/smoke-crm.sh` is a bash script; run it from Git Bash or WSL.
+
 The backend refuses to start without `CRM_JWT_SECRET`. The `local` profile
 (`backend/src/main/resources/application-local.yml`) supplies throwaway dev-only values:
 
