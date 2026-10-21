@@ -17,6 +17,15 @@ spec:
                 name: crm-backend
                 port:
                   name: http
+          # Readiness/liveness only (show-details: never), so the post-deploy smoke can prove
+          # the backend is ready through the same Ingress users hit. No other actuator paths.
+          - path: /actuator/health
+            pathType: Prefix
+            backend:
+              service:
+                name: crm-backend
+                port:
+                  name: http
           - path: /
             pathType: Prefix
             backend:

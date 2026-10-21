@@ -28,6 +28,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
+echo "Checking backend readiness at ${BASE_URL}/actuator/health/readiness"
+readiness="$(curl --fail --silent --show-error "${BASE_URL}/actuator/health/readiness")"
+printf '%s' "$readiness" | grep -Fq '"status":"UP"'
+
 echo "Checking frontend at ${BASE_URL}/"
 curl --fail --silent --show-error "${BASE_URL}/" >/dev/null
 

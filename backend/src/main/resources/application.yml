@@ -35,3 +35,26 @@ crm:
     topic: crm.customer.interactions.v1
     # Poison records land on <topic>.DLT (DeadLetterPublishingRecoverer default naming).
     consumer-group: crm-interactions-audit
+management:
+  endpoints:
+    web:
+      # Only what the probes and an operator need; everything else stays unexposed.
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      # /actuator/health/liveness and /actuator/health/readiness for the k3s probes.
+      probes:
+        enabled: true
+      show-details: never
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          # Not ready to take traffic until PostgreSQL answers; liveness ignores the DB so a
+          # database outage does not make Kubernetes restart-loop healthy pods.
+          include: readinessState,db
+logging:
+  pattern:
+    # Every log line carries the request's correlation id (set by CorrelationIdFilter in MDC).
+    level: "%5p [correlationId=%X{correlationId:-}]"

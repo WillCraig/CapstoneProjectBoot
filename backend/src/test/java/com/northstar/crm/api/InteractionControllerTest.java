@@ -134,7 +134,8 @@ class InteractionControllerTest {
         .andExpect(jsonPath("$.title").value("Not Found"))
         .andExpect(jsonPath("$.status").value(404))
         .andExpect(jsonPath("$.detail").value("Unknown customer: CUS-9999"))
-        .andExpect(jsonPath("$.instance").value("/api/v1/interactions"));
+        .andExpect(jsonPath("$.instance").value("/api/v1/interactions"))
+        .andExpect(jsonPath("$.correlationId").value("lab-request-001"));
   }
 
   @Test

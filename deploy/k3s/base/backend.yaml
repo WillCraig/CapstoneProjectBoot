@@ -53,16 +53,27 @@ spec:
                 secretKeyRef:
                   name: crm-secrets
                   key: database-password
+          # Spring Boot Actuator probe groups: readiness includes the PostgreSQL check, so a
+          # pod whose DB is unreachable leaves the Service endpoints instead of serving 500s.
+          # Liveness does not, so a DB outage never restart-loops otherwise healthy pods.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /actuator/health/readiness
               port: http
-            initialDelaySeconds: 15
             periodSeconds: 10
+            failureThreshold: 3
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /actuator/health/liveness
               port: http
-            initialDelaySeconds: 45
             periodSeconds: 20
+            failureThreshold: 3
           resources:
             requests:
               cpu: 250m

@@ -1,5 +1,6 @@
 package com.northstar.crm.api;
 
+import com.northstar.crm.observability.CorrelationId;
 import com.northstar.crm.service.InteractionNotFoundException;
 import com.northstar.crm.service.UnknownCustomerException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +22,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 /**
  * Maps failures to RFC 9457 Problem Details ({@code application/problem+json}) instead of
  * stack traces or ad-hoc error shapes, so Lab 50's Angular client sees one stable error
- * contract: {@code type, title, status, detail, instance}.
+ * contract: {@code type, title, status, detail, instance}, plus {@code correlationId} so a
+ * support ticket can be matched to the server log line.
  *
  * <p>Extends {@link ResponseEntityExceptionHandler} so framework MVC errors (validation,
  * missing parameters, unreadable bodies) render in the same format, with validation keeping
@@ -66,12 +68,32 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
       problem.setInstance(URI.create(servletRequest.getRequest().getRequestURI()));
     }
     problem.setProperty("errors", errors);
+    withCorrelation(problem);
     return ResponseEntity.status(problem.getStatus())
         .contentType(MediaType.APPLICATION_PROBLEM_JSON)
         .body(problem);
   }
 
+  /** Framework MVC errors (missing param, unreadable body, ...) also carry the correlation id. */
+  @Override
+  protected ResponseEntity<Object> handleExceptionInternal(
+      Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+    if (body instanceof ProblemDetail problem) {
+      withCorrelation(problem);
+    }
+    return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+  }
+
+  static ProblemDetail withCorrelation(ProblemDetail problem) {
+    String correlationId = CorrelationId.current();
+    if (correlationId != null) {
+      problem.setProperty("correlationId", correlationId);
+    }
+    return problem;
+  }
+
   private static ResponseEntity<ProblemDetail> problemResponse(ProblemDetail problem) {
+    withCorrelation(problem);
     return ResponseEntity.status(problem.getStatus())
         .contentType(MediaType.APPLICATION_PROBLEM_JSON)
         .body(problem);

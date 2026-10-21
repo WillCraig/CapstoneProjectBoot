@@ -1,9 +1,11 @@
 package com.northstar.crm.messaging;
 
 import com.northstar.crm.domain.ProcessedEventEntity;
+import com.northstar.crm.observability.CorrelationId;
 import com.northstar.crm.repo.ProcessedEventRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,18 @@ public class InteractionEventHandler {
   /** @return true if the event was applied, false if it was a duplicate delivery */
   @Transactional
   public boolean handle(CustomerInteractionRecordedV1 event) {
+    // Listener threads have no HTTP request; carry the event's correlation id into the logs.
+    if (event.correlationId() != null) {
+      MDC.put(CorrelationId.MDC_KEY, event.correlationId());
+    }
+    try {
+      return apply(event);
+    } finally {
+      MDC.remove(CorrelationId.MDC_KEY);
+    }
+  }
+
+  private boolean apply(CustomerInteractionRecordedV1 event) {
     if (event.eventVersion() != CustomerInteractionRecordedV1.VERSION) {
       throw new UnsupportedEventVersionException(event.eventVersion());
     }
