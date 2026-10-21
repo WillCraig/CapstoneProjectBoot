@@ -89,6 +89,37 @@ button:disabled {
   opacity: 0.65;
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 4.5rem;
+}
+
+.password-field .password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  width: auto;
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  transform: translateY(-50%);
+  border-radius: 6px;
+  background: transparent;
+  color: #245da6;
+  font-size: 0.85rem;
+}
+
+.password-field .password-toggle:hover {
+  background: #eef3fa;
+}
+
+.password-field .password-toggle:focus-visible {
+  outline: 2px solid #245da6;
+  outline-offset: 1px;
+}
+
 .error {
   padding: 0.75rem 1rem;
   border-radius: 8px;

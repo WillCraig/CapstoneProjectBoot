@@ -19,15 +19,28 @@
       data-testid="login-username"
     />
     <label for="login-password">Password</label>
-    <input
-      id="login-password"
-      name="password"
-      type="password"
-      [(ngModel)]="password"
-      required
-      autocomplete="current-password"
-      data-testid="login-password"
-    />
+    <div class="password-field">
+      <input
+        id="login-password"
+        name="password"
+        [type]="showPassword() ? 'text' : 'password'"
+        [(ngModel)]="password"
+        required
+        autocomplete="current-password"
+        data-testid="login-password"
+      />
+      <button
+        type="button"
+        class="password-toggle"
+        (click)="togglePassword()"
+        [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+        [attr.aria-pressed]="showPassword()"
+        aria-controls="login-password"
+        data-testid="login-password-toggle"
+      >
+        {{ showPassword() ? 'Hide' : 'Show' }}
+      </button>
+    </div>
     <button type="submit" data-testid="login-submit" [disabled]="busy()">
       {{ busy() ? 'Signing in…' : 'Sign in' }}
     </button>
