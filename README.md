@@ -163,7 +163,7 @@ compose.yaml Local Postgres + Kafka
   - [GitHub Actions plan](docs/github-actions-plan.md)
   - [Terraform / Ansible plan](docs/terraform-ansible-plan.md)
   - [Backlog](docs/backlog.md)
-  - [ADRs](docs/adrs/) · [NFRs](docs/nfrs.md) · [Risk register](docs/risk-register.md) · [Team roles](docs/team-roles.md) · [C4 context](docs/architecture/context.md) / [containers](docs/architecture/container.md)
+  - [ADRs](docs/adrs/) · [NFRs](docs/nfrs.md) · [Risk register](docs/risk-register.md) · [Team roles](docs/team-roles.md)
   - [Lab 49 backend notes](docs/lab49/README.md) · [Lab 50 frontend + persistence notes](docs/lab50/README.md)
   - [Lab 51 CI/CD runbook](docs/capstone-cicd-runbook.md)
   - [Lab 51 security and observability](docs/lab51/security-and-observability.md) — roles, endpoint matrix, negative tests, health
