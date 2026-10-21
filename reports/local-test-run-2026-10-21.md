@@ -1,6 +1,6 @@
 # Local test run — 2026-10-21 (Will's Mac, Colima Docker)
 
-Branch `feature/customer-crud`, local only (not pushed). Times are America/New_York (EDT).
+Recorded on branch `feature/customer-crud` before it was pushed (later fast-forwarded into `will_work` and pushed, 1cc1761). Times are America/New_York (EDT).
 
 ## Backend — `mvn -B clean verify` (Java 21, Spring Boot 3.3.5, Testcontainers PostgreSQL 16 + Kafka 3.8)
 

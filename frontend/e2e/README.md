@@ -15,12 +15,12 @@ docker compose up -d                       # Postgres :5432, Kafka :9092
 
 # 2. Backend with the local profile (dev-only throwaway JWT secret + demo passwords)
 cd backend
-SPRING_PROFILES_ACTIVE=local mvn spring-boot:run      # API on :8080
+SPRING_PROFILES_ACTIVE=local SERVER_PORT=8081 mvn spring-boot:run   # API on :8081
 
 # 3. Angular in e2e mode (port 4300, proxies /api -> CRM_E2E_API_TARGET)
 cd frontend
 npm ci
-CRM_E2E_API_TARGET=http://localhost:8080 npm run e2e:serve
+CRM_E2E_API_TARGET=http://localhost:8081 npm run e2e:serve   # required: the proxy default is 8080
 
 # 4. The test (another terminal)
 cd frontend

@@ -6,7 +6,7 @@ set -euo pipefail
 # issued JWT come from the environment and are never printed. The created
 # interaction is soft-deleted at the end; its audit row remains by design.
 #
-#   CRM_BASE_URL         Ingress origin (or http://localhost:8080 for a laptop run)
+#   CRM_BASE_URL         Ingress origin (or http://localhost:8081 for a laptop run)
 #   CRM_SMOKE_USERNAME   synthetic AGENT user (default: agent)
 #   CRM_SMOKE_PASSWORD   that user's password  -- or --
 #   CRM_SMOKE_TOKEN      an already-issued JWT (skips the login step)

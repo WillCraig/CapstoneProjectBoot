@@ -20,7 +20,7 @@ Our Week 6 capstone: a small customer management platform for Northstar. Agents 
 
 ## Run it locally
 
-You need Docker, JDK 21, Maven, and Node 20+.
+You need Docker (Docker Desktop on a Mac, running), JDK 21, Maven, and Node 20+.
 
 ```bash
 cp .env.example .env          # local only, never commit .env
@@ -32,9 +32,7 @@ Backend (first terminal):
 ```bash
 cd backend
 mvn clean verify              # unit, MockMvc, security, JPA, API, and Kafka integration tests
-                              # (Testcontainers; on Colima also export
-                              #  DOCKER_HOST=unix://$HOME/.colima/default/docker.sock
-                              #  TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock)
+                              # (Testcontainers: needs Docker running, e.g. Docker Desktop)
 SPRING_PROFILES_ACTIVE=local SERVER_PORT=8081 mvn spring-boot:run
                               # API on http://localhost:8081 (frontend dev env points here)
 ```
@@ -56,7 +54,8 @@ The backend refuses to start without `CRM_JWT_SECRET`. The `local` profile
 | `admin` | AGENT, ADMIN | `admin-local-dev` |
 
 Open http://localhost:4200, sign in as `agent`, and search for a customer. Only `admin`
-can close a customer (the API returns 403 for `agent`; the UI hides the button).
+can close a customer or reopen a closed one, whether by the close button or by setting the
+status in the edit form (the API returns 403 for `agent`; the UI hides those options).
 
 Health: `GET /actuator/health/readiness` and `/actuator/health/liveness` (public).
 Selenium UI test: see [frontend/e2e/README.md](frontend/e2e/README.md).
@@ -75,6 +74,26 @@ The API lives under `/api/v1/customers` and `/api/v1/interactions`. Get a token 
 `lab-request-001`. Details: [docs/lab51/security-and-observability.md](docs/lab51/security-and-observability.md).
 
 To stop everything: `docker compose down` (add `-v` to wipe the database).
+
+### Troubleshooting
+
+- **Port already in use** (`port is already allocated` from Compose, or `Port 4200 is already
+  in use` from `ng serve`): run `lsof -nP -iTCP:5432 -iTCP:9092 -iTCP:8081 -iTCP:4200 -sTCP:LISTEN`
+  and `docker ps`. Stop the other project's container (`docker stop <name>`; its data is kept)
+  or process, or run Angular on 4201 (`npx ng serve --port 4201`). The backend only allows
+  browser origins 4200 and 4201, so other ports get a CORS 403 on login.
+- **Login fails or the app shows the old demo-token screen:** an old backend is still running
+  on 8081. Stop it (Ctrl+C, or `pkill -f spring-boot:run`), start it again with the command
+  above, and hard-refresh the browser.
+- **Selenium (`npm run e2e`) times out on `/customers`:** start the e2e server with
+  `CRM_E2E_API_TARGET=http://localhost:8081 npm run e2e:serve`. The proxy defaults to 8080.
+- **Smoke script against a laptop backend:** set `CRM_SMOKE_SKIP_FRONTEND=true`, or it fails
+  with a 401 on `/`:
+  `CRM_BASE_URL=http://localhost:8081 CRM_SMOKE_SKIP_FRONTEND=true CRM_SMOKE_PASSWORD=agent-local-dev bash scripts/smoke-crm.sh`
+- **`docker build` fails on a missing JAR or `dist/`:** the Dockerfiles only copy prebuilt
+  output. Run `mvn clean verify` in `backend/` and `npx ng build` in `frontend/` first, then
+  `docker build -t northstar-crm-backend:local backend` and
+  `docker build -t northstar-crm-frontend:local frontend`.
 
 ## Repo layout
 

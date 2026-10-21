@@ -1,5 +1,9 @@
 # Lab 49 — backend demo runbook
 
+> **Dated lab record.** The run steps below (backend on port 8080, the demo bearer token) are
+> superseded. Current instructions: [README.md — Run it locally](../../README.md#run-it-locally).
+> Auth and roles: [../lab51/security-and-observability.md](../lab51/security-and-observability.md).
+
 > **Superseded (Lab 51):** the demo bearer token and *Mock login* described below were replaced by
 > real JWT login with AGENT/ADMIN roles. See [../lab51/security-and-observability.md](../lab51/security-and-observability.md).
 
@@ -174,15 +178,10 @@ mvn -B clean verify   # 29 tests, BUILD SUCCESS — run twice, identical results
 ```
 
 The integration tests start their own PostgreSQL 16 and Kafka containers
-(Testcontainers), so no local Compose ports are needed. On this machine Docker
-runs under Colima, which Testcontainers does not auto-detect — export first:
+(Testcontainers), so no local Compose ports are needed. Docker must be running
+(Docker Desktop on the Mac); Testcontainers finds it with no extra settings.
 
-```bash
-export DOCKER_HOST=unix://$HOME/.colima/default/docker.sock
-export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
-```
-
-(Docker Desktop / Linux need neither. The pom pins Docker API `1.41` because
+(The pom pins Docker API `1.41` because
 Testcontainers' client defaults to 1.32, which current Docker engines reject.)
 
 ## Test inventory (29)

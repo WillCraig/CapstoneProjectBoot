@@ -40,7 +40,7 @@ No deployment step rebuilds the JAR, Angular bundle, or images.
 
 | Job | Purpose | Evidence |
 | --- | --- | --- |
-| `Frontend (Angular)` | `npm ci`, 13 Karma tests, production build, upload verified bundle | Job log + `frontend-dist-<sha>` |
+| `Frontend (Angular)` | `npm ci`, 33 Karma tests, production build, upload verified bundle | Job log + `frontend-dist-<sha>` |
 | `Backend (Maven)` | Java 21 `mvn -B clean verify`, upload verified JAR | Job log + `backend-verified-jar-<sha>` |
 | `Security (dependency, secret, and config scan)` | Trivy filesystem HIGH/CRITICAL report | `trivy-repository-<sha>` |
 | `Container images (build, scan, and digest)` | Build both images from verified artifacts, Trivy them, record IDs/digests | `trivy-images-<sha>`, `image-digests-<sha>` |
@@ -235,7 +235,7 @@ kubectl kustomize deploy/k3s/overlays/dev
 ```
 
 The production frontend uses a relative `/api` base, so the same Ingress host
-serves Angular and Spring. Development keeps using `http://localhost:8080`.
+serves Angular and Spring. Development keeps using `http://localhost:8081`.
 
 ## Manual promotion procedure
 
@@ -335,9 +335,9 @@ terraform -chdir=infra/terraform validate
 ansible-playbook -i localhost, infra/ansible/site.yml --syntax-check
 ```
 
-On this Colima workstation, backend Testcontainers commands need the Docker
-variables recorded in `lab49/backend-demo.md`. GitHub-hosted runners provide
-their standard Docker environment.
+Backend Testcontainers commands need a running Docker engine. Docker Desktop
+and GitHub-hosted runners both work with no extra settings; see
+[README.md — Run it locally](../README.md#run-it-locally) for the local steps.
 
 ## Still external before Lab 51 can be called deployed
 

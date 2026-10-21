@@ -1,5 +1,9 @@
 # Lab 50 — frontend + PostgreSQL persistence demo
 
+> **Dated lab record.** The run steps below (backend on port 8080, the demo bearer token) are
+> superseded. Current instructions: [README.md — Run it locally](../../README.md#run-it-locally).
+> Auth and roles: [../lab51/security-and-observability.md](../lab51/security-and-observability.md).
+
 > **Superseded (Lab 51):** the demo bearer token and *Mock login* described below were replaced by
 > real JWT login with AGENT/ADMIN roles. See [../lab51/security-and-observability.md](../lab51/security-and-observability.md).
 

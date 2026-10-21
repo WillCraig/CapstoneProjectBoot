@@ -36,9 +36,8 @@ CHROME_BIN='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
   npx ng test --watch=false --browsers=ChromeHeadless
 ```
 
-`ng` is not required on PATH — use `npx ng`. Backend ITs use Testcontainers;
-on this Colima workstation export the Docker variables documented in
-`../lab49/backend-demo.md` first. Angular UI is Lab 50; the k3s deploy is Lab 51.
+`ng` is not required on PATH — use `npx ng`. Backend ITs use Testcontainers,
+so Docker (Docker Desktop on the Mac) must be running; no extra variables are needed. Angular UI is Lab 50; the k3s deploy is Lab 51.
 
 ## Timed-path Pass criteria
 
