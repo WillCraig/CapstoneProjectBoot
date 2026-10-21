@@ -4,19 +4,19 @@
   <p class="intro">Choose a customer workspace to continue.</p>
 
   <div class="choice-grid">
-    <a class="choice-card" routerLink="/customers/new">
+    <a class="choice-card" routerLink="/customers/new" data-testid="choice-create">
       <span class="choice-number">01</span>
       <h3>Create a customer</h3>
       <p>Add a new customer. To update one, look it up first.</p>
       <span class="choice-action">New customer <span aria-hidden="true">→</span></span>
     </a>
-    <a class="choice-card" routerLink="/customers">
+    <a class="choice-card" routerLink="/customers" data-testid="choice-lookup">
       <span class="choice-number">02</span>
       <h3>Look up a customer</h3>
       <p>Browse, filter, and sort tracked customers.</p>
       <span class="choice-action">View customers <span aria-hidden="true">→</span></span>
     </a>
-    <a class="choice-card" routerLink="/interactions">
+    <a class="choice-card" routerLink="/interactions" data-testid="choice-interactions">
       <span class="choice-number">03</span>
       <h3>Customer interactions</h3>
       <p>Review recent activity and record a note.</p>

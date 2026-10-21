@@ -1,8 +1,9 @@
 // Selenium happy path against the running Angular app (not part of `ng test`).
 //
 // Journey (capstone brief, agent workflow): sign in as the AGENT demo user ->
-// search "Amina" -> open CUS-1001 -> record an interaction -> see it on the
-// timeline -> soft-delete it again so the run is repeatable.
+// land on the home screen -> open customer lookup -> search "Amina" -> open
+// CUS-1001 -> record an interaction -> see it on the timeline -> soft-delete it
+// again so the run is repeatable.
 //
 // Prereqs: backend + PostgreSQL + Kafka running, and `npm run e2e:serve`
 // (port 4300, proxies /api to CRM_E2E_API_TARGET). See e2e/README.md.
@@ -61,10 +62,12 @@ test('agent records an interaction for Amina and sees it on her timeline', async
   await (await visible('login-username')).sendKeys(USERNAME);
   await (await visible('login-password')).sendKeys(PASSWORD);
   await (await visible('login-submit')).click();
-  await driver.wait(until.urlContains('/customers'), WAIT_MS);
+  await driver.wait(until.urlContains('/home'), WAIT_MS);
   assert.match(await (await visible('signed-in-user')).getText(), /agent \(AGENT\)/);
 
-  // 2. Search for Amina and open her profile.
+  // 2. From the home screen, open customer lookup, search for Amina, open her profile.
+  await (await visible('choice-lookup')).click();
+  await driver.wait(until.urlContains('/customers'), WAIT_MS);
   const search = await visible('customer-search');
   await search.clear();
   await search.sendKeys('Amina');

@@ -5,7 +5,6 @@ import { AuthSessionService, LoginResponse } from '../../core/auth/auth-session.
 import { CustomerApiService } from './customer-api.service';
 import { CustomerDetailPageComponent } from './customer-detail-page.component';
 import { CustomerFormPageComponent } from './customer-form-page.component';
-import { CustomerListPageComponent } from './customer-list-page.component';
 import { Customer } from './customer.model';
 
 const amina: Customer = {
@@ -42,11 +41,7 @@ describe('customer pages', () => {
 
   function configure(routeId?: string) {
     return TestBed.configureTestingModule({
-      imports: [
-        CustomerListPageComponent,
-        CustomerDetailPageComponent,
-        CustomerFormPageComponent,
-      ],
+      imports: [CustomerDetailPageComponent, CustomerFormPageComponent],
       providers: [
         provideRouter([]),
         { provide: CustomerApiService, useValue: api },
@@ -76,30 +71,6 @@ describe('customer pages', () => {
     api.getById.and.returnValue(of(amina));
     api.update.and.returnValue(of({ ...amina, status: 'CLOSED' }));
     api.delete.and.returnValue(of(undefined));
-  });
-
-  it('list page loads all customers and renders profile rows', async () => {
-    await configure();
-    router = TestBed.inject(Router);
-    const fixture: ComponentFixture<CustomerListPageComponent> =
-      TestBed.createComponent(CustomerListPageComponent);
-    fixture.detectChanges();
-
-    expect(api.search).toHaveBeenCalledWith('');
-    expect(fixture.nativeElement.textContent).toContain('Amina Khan');
-    expect(fixture.nativeElement.textContent).toContain('Ravi Singh');
-    expect(router).toBeTruthy();
-  });
-
-  it('list page searches by the typed term', async () => {
-    await configure();
-    const fixture = TestBed.createComponent(CustomerListPageComponent);
-    fixture.detectChanges();
-    fixture.componentInstance.query = 'amina';
-
-    fixture.componentInstance.reload();
-
-    expect(api.search).toHaveBeenCalledWith('amina');
   });
 
   it('detail page loads the profile and closes the customer', async () => {

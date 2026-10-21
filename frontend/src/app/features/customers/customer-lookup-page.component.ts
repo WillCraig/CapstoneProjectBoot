@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { apiErrorMessage } from '../../core/api-error';
 import { CustomerApiService } from './customer-api.service';
 import { Customer } from './customer.model';
 
@@ -42,7 +43,7 @@ export class CustomerLookupPageComponent {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(`Could not load customers (${err.status ?? 'network'})`);
+        this.error.set(apiErrorMessage(err, 'Could not load customers'));
         this.loading.set(false);
       },
     });

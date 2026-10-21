@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 import { CustomerApiService } from './customer-api.service';
 import { CustomerLookupPageComponent } from './customer-lookup-page.component';
 
@@ -45,5 +46,27 @@ describe('CustomerLookupPageComponent', () => {
     fixture.componentInstance.reload();
 
     expect(api.search).toHaveBeenCalledWith('amina');
+  });
+
+  it('renders Profile and Edit links on each row for the e2e flow', () => {
+    const rows: NodeListOf<HTMLElement> =
+      fixture.nativeElement.querySelectorAll('[data-testid="customer-row"]');
+    expect(rows.length).toBe(3);
+    const profile = rows[0].querySelector('[data-testid="customer-profile"]');
+    const edit = rows[0].querySelector('[data-testid="customer-edit"]');
+    expect(profile?.getAttribute('href')).toBe('/customers/CUS-1001');
+    expect(edit?.getAttribute('href')).toBe('/customers/CUS-1001/edit');
+  });
+
+  it('shows the Problem Details message when the search fails', () => {
+    api.search.and.returnValue(
+      throwError(() => new HttpErrorResponse({ status: 403, error: {} })),
+    );
+    fixture.componentInstance.reload();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="list-error"]').textContent).toContain(
+      'Your role does not allow this action.',
+    );
   });
 });
