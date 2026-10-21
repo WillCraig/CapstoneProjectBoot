@@ -22,6 +22,11 @@ export class LoginPageComponent {
   password = '';
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);
+  readonly showPassword = signal(false);
+
+  togglePassword(): void {
+    this.showPassword.update((shown) => !shown);
+  }
 
   login(): void {
     this.busy.set(true);
@@ -29,6 +34,7 @@ export class LoginPageComponent {
     this.auth.login(this.username.trim(), this.password).subscribe({
       next: () => {
         this.password = '';
+        this.showPassword.set(false);
         this.busy.set(false);
         void this.router.navigate(['/home']);
       },
