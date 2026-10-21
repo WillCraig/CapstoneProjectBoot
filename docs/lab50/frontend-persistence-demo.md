@@ -1,5 +1,8 @@
 # Lab 50 — frontend + PostgreSQL persistence demo
 
+> **Superseded (Lab 51):** the demo bearer token and *Mock login* described below were replaced by
+> real JWT login with AGENT/ADMIN roles. See [../lab51/security-and-observability.md](../lab51/security-and-observability.md).
+
 This is the reproduction runbook for the Angular side of the Northstar CRM
 interaction slice. The backend contract and Kafka evidence remain in
 [`../lab49/backend-demo.md`](../lab49/backend-demo.md); the Lab 48 story is

@@ -1,5 +1,8 @@
 # Lab 49 — backend demo runbook
 
+> **Superseded (Lab 51):** the demo bearer token and *Mock login* described below were replaced by
+> real JWT login with AGENT/ADMIN roles. See [../lab51/security-and-observability.md](../lab51/security-and-observability.md).
+
 Reproduction guide for the CAP-12 interaction slice: a peer with Docker, JDK 21,
 and Maven should be able to run every step below and see the same results.
 

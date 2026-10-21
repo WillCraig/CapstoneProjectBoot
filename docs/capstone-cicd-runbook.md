@@ -156,7 +156,10 @@ Apply the reviewer rules in `environment-strategy.md`:
 | `KUBECONFIG_B64` | Teaching-cluster fallback credentials, base64-encoded |
 | `CRM_DATABASE_USERNAME` | PostgreSQL username placed in `crm-secrets` |
 | `CRM_DATABASE_PASSWORD` | PostgreSQL password placed in `crm-secrets` |
-| `CRM_SMOKE_BEARER_TOKEN` | Synthetic-data smoke call; replaced by Lab 51/JWT-stage test identity when real auth lands |
+| `CRM_JWT_SECRET` | HS256 signing key for API JWTs (>= 32 random bytes), placed in `crm-secrets/jwt-secret` |
+| `CRM_AGENT_PASSWORD` | Synthetic `agent` (AGENT) password, preferably a BCrypt hash, placed in `crm-secrets/agent-password` |
+| `CRM_ADMIN_PASSWORD` | Synthetic `admin` (AGENT+ADMIN) password, preferably a BCrypt hash, placed in `crm-secrets/admin-password` |
+| `CRM_SMOKE_AGENT_PASSWORD` | Plain-text `agent` password the smoke uses to log in (matches `CRM_AGENT_PASSWORD`) |
 | `GHCR_PULL_TOKEN` | Read-only package token stored as the cluster image-pull secret |
 
 Never put a value from this table in YAML, a runbook, a screenshot, or a log.
@@ -214,6 +217,9 @@ Base: `deploy/k3s/base/`
 - Shared Traefik Ingress: `/api` → backend, `/` → frontend
 - `crm-config` for non-secret database/Kafka endpoints
 - References to runtime-created `crm-secrets` and `ghcr-pull-secret`
+- Actuator HTTP probes: startup + liveness on `/actuator/health/liveness`,
+  readiness on `/actuator/health/readiness` (includes the PostgreSQL check);
+  the Ingress also routes `/actuator/health` to the backend for the smoke
 - Probes, resources, non-root security contexts, dropped capabilities, and
   read-only root filesystems with writable `/tmp` mounts where required
 
@@ -255,24 +261,28 @@ serves Angular and Spring. Development keeps using `http://localhost:8080`.
 
 ## Smoke
 
-`scripts/smoke-crm.sh` requires `CRM_BASE_URL` and `CRM_SMOKE_TOKEN`. It:
+`scripts/smoke-crm.sh` requires `CRM_BASE_URL` and either `CRM_SMOKE_PASSWORD`
+(logs in as `CRM_SMOKE_USERNAME`, default `agent`) or a pre-issued `CRM_SMOKE_TOKEN`. It:
 
-1. Requests the frontend root.
-2. Creates a synthetic Amina (`CUS-1001`) interaction with correlation
+1. Requires `/actuator/health/readiness` to report `UP`.
+2. Requests the frontend root (skip with `CRM_SMOKE_SKIP_FRONTEND=true` for a
+   backend-only laptop run).
+3. Logs in through `POST /api/v1/auth/login` (the JWT is never printed).
+4. Creates a synthetic Amina (`CUS-1001`) interaction with correlation
    `lab-request-001`.
-3. Reads the timeline and requires the returned ID and unique summary.
-4. Soft-deletes that smoke interaction, including on early failure after a
+5. Reads the timeline and requires the returned ID and unique summary.
+6. Soft-deletes that smoke interaction, including on early failure after a
    successful create.
 
 Manual equivalent:
 
 ```bash
 CRM_BASE_URL=https://<ingress-host> \
-CRM_SMOKE_TOKEN='<read from the environment secret store>' \
+CRM_SMOKE_PASSWORD='<read from the environment secret store>' \
 bash scripts/smoke-crm.sh
 ```
 
-Do not paste the token into shell history or a ticket. Prefer the workflow's
+Do not paste the password or a token into shell history or a ticket. Prefer the workflow's
 Environment secret.
 
 ## Rollback

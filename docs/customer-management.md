@@ -67,16 +67,11 @@ document describes that build.
 
 ### Deliberately not built
 
-- **Real JWT/RBAC.** The app still uses the demo Bearer [REDACTED] (`DemoBearerFilter`). That
-  is a pre-existing Lab 51 gap owned outside this slice; the README already names it as
-  future hardening. Customer endpoints sit behind the same filter as interactions, so
-  they inherit identical 401 behavior today and identical JWT behavior whenever that lands.
-- **Kafka events for customer changes.** The brief's Events row says "publish and consume
-  versioned customer / audit events," which can be read as requiring a
-  `CustomerCreatedV1`-style event. This slice does not add one. The interaction event
-  (`CustomerInteractionRecordedV1`) already provides the messaging and audit evidence the
-  rubric scores, and no course source names a customer-event contract to freeze. This is
-  recorded as residual scope in §8, not silently dropped.
+- **Real JWT/RBAC** — *since built* (see [docs/lab51/security-and-observability.md](lab51/security-and-observability.md)):
+  customer reads/creates/updates need AGENT; closing a customer (`DELETE`) is ADMIN-only.
+- **Kafka events for customer changes** — *since built*: `CustomerStatusChangedV1` on
+  `crm.customer.lifecycle.v1`, published after commit when status changes and audited by
+  a deduping consumer with a DLT (see the Lab 51 doc).
 - **Email field.** Module 50 Exercise 2 sketches a customer DTO with an `email` field.
   The database schema this repo shipped in Lab 49–50 has no email column, and the seeded
   fixtures have no emails. Adding a column now would mean a fourth migration to satisfy
@@ -315,8 +310,9 @@ constraints are behavior, and mocks cannot testify about them.
 ## 7. Running it and the demo path
 
 Same commands as the rest of the capstone (see the root README). With the backend on
-:8080 and the frontend on :4200, sign in with **Mock login** and the app lands on
-Customers.
+:8080 and the frontend on :4200, sign in as `agent` (or `admin`, needed to close a
+customer); local-profile passwords are in `backend/src/main/resources/application-local.yml`.
+The app lands on Customers.
 
 A five-minute manual verification — and the natural Lab 52 demo order:
 
@@ -351,27 +347,15 @@ curl -fsS -i -X POST -H "Authorization: Bearer [REDACTED]" \
 
 Honest gaps, in the capstone's own "evidence over assertion" spirit:
 
-- **Authentication is still the demo token.** Customer endpoints are exactly as secure
-  as interaction endpoints today — which is to say, gated by `DemoBearerFilter`, not
-  JWT/RBAC. When Lab 51 hardening lands it must cover both resource families, and the
-  role question (may an AGENT close a customer, or is that ADMIN-only?) will need an
-  answer captured in an ADR.
-- **No customer lifecycle event on Kafka.** If a reviewer reads the brief's Events row
-  as requiring one, the honest position is: not built, contract never frozen by any
-  course source, next step is a `CustomerStatusChangedV1` published after commit using
-  the same after-commit pattern as `CustomerInteractionRecordedV1`. Named here so it can
-  be accepted as residual risk with an owner and date rather than discovered in Q&A.
+- ~~Authentication is still the demo token.~~ Resolved: JWT + AGENT/ADMIN roles; close is ADMIN-only.
+- ~~No customer lifecycle event on Kafka.~~ Resolved: `CustomerStatusChangedV1`.
 - **Concurrent edits are last-write-wins.** No version column, no 409. Acceptable for a
   two-fixture training system; wrong for production. The migration that adds `version`
   columns to both tables is the fix, and it should be done for interactions at the same
   time so the two aggregates behave identically.
 - **Search has no pagination and no minimum term length.** Fine at demo scale; the
   repository is the single place to add `Pageable` when a real data volume appears.
-- **Nothing is committed yet.** All of this work is uncommitted on
-  `feature/customer-crud` pending team review. The branch also carries pre-existing
-  uncommitted changes from `will_work` (two deleted root documents and five untracked
-  lab guides) that are not part of this slice and should not be swept into its commit.
-
+- **Committed locally** on `feature/customer-crud` (not pushed).
 ### Likely defense questions, with pointers
 
 - *"Why does delete not delete?"* — §4.4: foreign keys, audit preservation, brief
