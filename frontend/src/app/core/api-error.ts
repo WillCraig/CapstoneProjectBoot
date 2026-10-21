@@ -16,6 +16,9 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
   if (error.status === 401) {
     return 'Your session is missing or expired. Please sign in again.';
   }
+  if (error.status === 403) {
+    return 'Your role does not allow this action.';
+  }
   const problem = error.error as ProblemDetail | null;
   const detail = typeof problem?.detail === 'string' ? problem.detail : null;
   const fieldErrors = Array.isArray(problem?.errors)

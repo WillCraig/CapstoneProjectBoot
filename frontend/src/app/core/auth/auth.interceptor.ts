@@ -3,10 +3,7 @@ import { inject } from '@angular/core';
 import { isApiUrl } from '../api-url';
 import { AuthSessionService } from './auth-session.service';
 
-/**
- * Attaches the in-memory demo token to API calls only. In Lab 51 the session
- * token becomes a real JWT; this interceptor is the one place that formats it.
- */
+/** Attaches the in-memory JWT to first-party API calls only, never to other hosts. */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = inject(AuthSessionService).accessToken();
 
@@ -14,6 +11,5 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-  return next(req.clone({ setHeaders: { Authorization: authorization } }));
+  return next(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
 };

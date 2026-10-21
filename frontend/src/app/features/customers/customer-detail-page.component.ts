@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../core/api-error';
+import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { CustomerApiService } from './customer-api.service';
 import { Customer } from './customer.model';
 
@@ -57,10 +58,12 @@ import { Customer } from './customer.model';
           </a>
         </p>
 
-        @if (current.status !== 'CLOSED') {
+        @if (current.status !== 'CLOSED' && session.isAdmin()) {
           <button type="button" data-testid="close-customer" [disabled]="closing()" (click)="close()">
             {{ closing() ? 'Closing…' : 'Close customer' }}
           </button>
+        } @else if (current.status !== 'CLOSED') {
+          <p data-testid="close-requires-admin">Only an ADMIN can close a customer.</p>
         } @else {
           <p data-testid="closed-message">This customer is closed. History is kept for audit.</p>
         }
@@ -74,6 +77,7 @@ export class CustomerDetailPageComponent implements OnInit {
   private readonly api = inject(CustomerApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  readonly session = inject(AuthSessionService);
 
   readonly customer = signal<Customer | null>(null);
   readonly error = signal<string | null>(null);
