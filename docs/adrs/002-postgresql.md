@@ -1,35 +1,23 @@
 # ADR 002: PostgreSQL as the system of record
 
-**Status:** Accepted (built in Labs 49–50).
-**Owner:** Backend (Keifer leads; see [team roles](../team-roles.md)).
+Status: Accepted
 
 ## Context
 
-Customers and interactions have to survive restarts, and they're the truth if Kafka and the database ever disagree. The course stack names PostgreSQL, and local dev runs `postgres:16` in `compose.yaml`.
+Customers and interactions have to survive restarts, and the database wins if it ever disagrees with Kafka. The course stack names PostgreSQL.
 
 ## Decision
 
-PostgreSQL 16 through Spring Data JPA, with **Flyway owning the schema**. Hibernate runs `ddl-auto: validate`, so it checks the schema at startup but never changes it.
+We use PostgreSQL 16 through Spring Data JPA. Flyway owns the schema and Hibernate only validates it (`ddl-auto: validate`).
 
-| Migration | What it does |
-| --- | --- |
-| `V1__crm_schema.sql` | `customer` (internal `BIGSERIAL` key plus unique `public_id` like `CUS-1001`, `status` CHECK `PROSPECT/ACTIVE/CLOSED`) and `customer_interaction` (`UUID` key, `interaction_type` CHECK `CALL/EMAIL/NOTE/MEETING`, `summary` up to 1024 characters, `correlation_id`, `TIMESTAMPTZ` times). Index on `(customer_id, created_at DESC)` for the newest-first timeline. Seeds only the synthetic `CUS-1001` Amina Khan (ACTIVE) and `CUS-1002` Ravi Singh (PROSPECT) |
-| `V2__processed_event.sql` | `processed_event`, one row per consumed `eventId`, so redelivered Kafka events are skipped |
-| `V3__interaction_soft_delete.sql` | Adds `deleted_at` so deleting an interaction hides it but keeps the audit row |
+- `V1__crm_schema.sql` creates `customer` and `customer_interaction` and seeds `CUS-1001` and `CUS-1002`.
+- `V2__processed_event.sql` adds `processed_event` so consumers can skip duplicate events.
+- `V3__interaction_soft_delete.sql` adds `deleted_at` so deleted interactions stay for audit.
 
-Customers are never hard-deleted either: `DELETE /api/v1/customers/{id}` sets `status = CLOSED`, so interactions never point at a missing customer.
+We never hard-delete a customer either. `DELETE /api/v1/customers/{id}` sets the status to `CLOSED`. The API only shows the public id, never the internal key.
 
-The API only ever shows the public id (`CUS-1001`). The internal numeric key stays inside the database.
-
-## Rejected
-
-- **Oracle.** Not the taught path, licensed, and its types (`VARCHAR2`, `NUMBER`, `SYSDATE`) would leak into migrations and AI-drafted SQL.
-- **Kafka as the store.** Events are notifications. We need `404` lookups, search, and newest-first lists, which a topic can't answer.
-- **H2 for tests.** Tests would pass against a database we don't run. Integration tests use Testcontainers `postgres:16`, and the CI backend job uses a `postgres:16` service.
+Alternatives: Oracle isn't the taught path, and its types would leak into our migrations. H2 for tests would mean testing against a database we don't run, so integration tests use Testcontainers `postgres:16`.
 
 ## Consequences
 
-- Every schema change is a new `V<n>__*.sql`. A merged migration is never edited.
-- `mvn clean verify` needs Docker for Testcontainers.
-- Where PostgreSQL runs on the shared cluster is not decided by us. The deploy reads `CRM_DATABASE_URL` from the GitHub Environment. **Team to confirm** with the instructor: a shared database service, or our own. That also decides backups (see the recoverability rows in [docs/nfrs.md](../nfrs.md)).
-- `V1` still starts with a leftover starter `TODO` comment about types. It's harmless, and per the rule above we don't edit a merged migration.
+Every schema change is a new migration file, and we don't edit one after it merges. `mvn clean verify` needs Docker running. Where PostgreSQL runs on the cluster is TBD, ask the instructor. The deploy reads it from `CRM_DATABASE_URL`.

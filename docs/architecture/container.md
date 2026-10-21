@@ -1,37 +1,30 @@
 # Containers (C4 level 2)
 
-The deployable units, and how requests and events move between them. This matches [docs/architecture.md](../architecture.md) and the [context view](context.md).
+The pieces we deploy and how traffic moves between them. See also the [context view](context.md).
 
 ```mermaid
 flowchart LR
-  B(["Browser"]) --> I["Traefik Ingress<br/>one host per environment"]
-  I -->|"/"| SPA["crm-frontend<br/>Angular 19 bundle on nginx-unprivileged :8080"]
-  I -->|"/api, /actuator/health"| API["crm-backend<br/>Spring Boot 3.3 / Java 21 :8080"]
-  API -->|"JPA + Flyway"| PG[("PostgreSQL 16")]
-  API -->|"after commit"| K[["Kafka<br/>interactions.v1, lifecycle.v1 (+ .DLT)"]]
+  B(["Browser"]) --> I["Traefik Ingress"]
+  I -->|"/"| SPA["crm-frontend<br/>nginx :8080"]
+  I -->|"/api, /actuator/health"| API["crm-backend<br/>Spring Boot :8080"]
+  API --> PG[("PostgreSQL 16")]
+  API -->|"after commit"| K[["Kafka"]]
   K -->|"audit consumers"| API
 ```
 
-## Deployable units
-
-| Container | Tech | Runs where |
+| Container | What it is | Where it runs |
 | --- | --- | --- |
-| `crm-frontend` | Angular 19 production bundle, built once in CI and copied into `nginxinc/nginx-unprivileged:1.27-alpine`. Uses same-origin `/api` calls | k3s Deployment and Service in each environment namespace (1 replica in dev and test, 2 in stage and prod-like) |
-| `crm-backend` | Spring Boot 3.3 on `eclipse-temurin:21-jre-alpine`, running the CI-verified JAR, pinned by digest | k3s Deployment and Service. Startup, readiness (includes the DB) and liveness probes on Actuator |
-| PostgreSQL 16 | Flyway V1–V3 schema, system of record | Local: `compose.yaml`. Cluster: **Team to confirm** (URL comes from `CRM_DATABASE_URL`) |
-| Kafka | Topics `crm.customer.interactions.v1` and `crm.customer.lifecycle.v1`, plus `.DLT` | Local: `compose.yaml`. Cluster: **Team to confirm** (`CRM_KAFKA_BOOTSTRAP_SERVERS`) |
-| Traefik Ingress | Built into k3s, `ingressClassName: traefik` | Cluster. Hosts are placeholders until the instructor assigns them |
+| `crm-frontend` | Angular production bundle on `nginx-unprivileged`. Calls `/api` on the same origin | k3s Deployment, 1 replica in dev and test, 2 in stage and prod-like |
+| `crm-backend` | Spring Boot JAR on `eclipse-temurin:21-jre-alpine`, pinned by digest. Startup, readiness and liveness probes on Actuator | k3s Deployment |
+| PostgreSQL 16 | Flyway V1-V3 schema | Compose locally. Cluster TBD (`CRM_DATABASE_URL`) |
+| Kafka | `crm.customer.interactions.v1` and `crm.customer.lifecycle.v1`, plus `.DLT` | Compose locally. Cluster TBD (`CRM_KAFKA_BOOTSTRAP_SERVERS`) |
+| Traefik Ingress | Built into k3s | Hosts are placeholders for now |
 
-Locally, `docker compose up -d` starts PostgreSQL and Kafka only. The API runs with `mvn spring-boot:run` on port 8081 and the SPA with `ng serve` on 4200 (see the README).
+Locally, `docker compose up -d` starts only PostgreSQL and Kafka. We run the API with `mvn spring-boot:run` on 8081 and the SPA with `ng serve` on 4200.
 
-## Flows
+## Main flows
 
-| Flow | Path |
-| --- | --- |
-| Sign in | SPA sends `POST /api/v1/auth/login`. The API returns a 15-minute JWT, which the SPA keeps in memory |
-| Find a customer | SPA sends `GET /api/v1/customers?q=amina`. The API reads from PostgreSQL. No Kafka |
-| Record an interaction | SPA sends `POST /api/v1/interactions` with a Bearer token and `X-Correlation-Id`. The API validates, saves, commits, publishes `CustomerInteractionRecordedV1`, and returns `201` |
-| List interactions | SPA sends `GET /api/v1/interactions?customerId=CUS-1001`. The API reads newest first, hiding soft-deleted rows |
-| Change status | `PUT /api/v1/customers/CUS-1002` with `ACTIVE`. The API saves and publishes `CustomerStatusChangedV1`. Closing or reopening needs ADMIN |
-| Unknown customer | `CUS-9999` returns `404`. No row, no event |
-| Release | CI builds each image once and records the digest. `capstone-deploy` pins that digest into the overlay for each namespace. Only ConfigMap values, Secrets, hosts and replicas differ per environment |
+- Sign in. `POST /api/v1/auth/login` returns a 15-minute JWT that the SPA keeps in memory.
+- Record an interaction. `POST /api/v1/interactions` validates, saves, commits, publishes `CustomerInteractionRecordedV1`, and returns `201`.
+- Change status. `PUT /api/v1/customers/CUS-1002` with `ACTIVE` saves and publishes `CustomerStatusChangedV1`. Closing or reopening needs ADMIN.
+- Release. CI builds each image once and records the digest. `capstone-deploy` pins that digest into the overlay for each namespace.

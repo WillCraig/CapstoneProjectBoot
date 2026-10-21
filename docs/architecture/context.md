@@ -1,43 +1,37 @@
 # Context (C4 level 1)
 
-Who uses Northstar CRM, what it depends on, and where the trust lines are. This matches [docs/architecture.md](../architecture.md). The next level down is the [container view](container.md).
+Who uses Northstar CRM and what it depends on. The next level down is the [container view](container.md).
 
 ```mermaid
 flowchart LR
-  Agent(["Service agent<br/>(role AGENT)"]) -->|"HTTPS, browser"| CRM["Northstar CRM<br/>Angular SPA + Spring Boot API"]
-  Admin(["Admin<br/>(roles AGENT + ADMIN)"]) -->|"HTTPS, browser"| CRM
-  CRM -->|"reads/writes"| PG[("PostgreSQL 16")]
-  CRM -->|"publishes + consumes<br/>versioned events"| K[["Kafka"]]
-  Team(["Delivery team"]) -->|"PRs, reviews"| GH["GitHub + Actions"]
-  GH -->|"images by digest"| GHCR["GHCR registry"]
-  GH -->|"approved deploy"| K3S["Shared k3s cluster"]
-  K3S -->|"pulls digest"| GHCR
-  K3S -->|"runs"| CRM
+  Agent(["Agent"]) -->|"browser"| CRM["Northstar CRM<br/>Angular + Spring Boot"]
+  Admin(["Admin"]) -->|"browser"| CRM
+  CRM --> PG[("PostgreSQL 16")]
+  CRM <--> K[["Kafka"]]
+  Team(["Our team"]) -->|"PRs"| GH["GitHub Actions"]
+  GH -->|"images"| GHCR["GHCR"]
+  GH -->|"approved deploy"| K3S["Shared k3s"]
+  K3S -->|"pulls by digest"| GHCR
 ```
 
 ## People
 
-| Who | What they do |
-| --- | --- |
-| Service agent (`agent`, role AGENT) | Signs in, searches customers, opens `CUS-1001`, records, edits and soft-deletes interactions, creates customers and moves Ravi `PROSPECT → ACTIVE` |
-| Admin (`admin`, roles AGENT + ADMIN) | Everything an agent can do, plus close or reopen a customer and read `/actuator/metrics` |
-| Delivery team | Merges through reviewed PRs and releases through Actions |
+- Agent (`agent`, role AGENT) searches customers, creates and updates them, and records, edits and deletes interactions.
+- Admin (`admin`, roles AGENT and ADMIN) can do the same, and can also close or reopen a customer and read `/actuator/metrics`.
+- Our team merges through reviewed PRs and releases through Actions.
 
-Both accounts are synthetic demo users. The API signs in-house tokens, so there's no outside login service.
+Both accounts are demo users. The API issues its own tokens, so there is no outside login service.
 
 ## External systems
 
-| System | Why we depend on it | Status |
+| System | Local | Cluster |
 | --- | --- | --- |
-| PostgreSQL 16 | System of record | Local: Compose. Cluster: **Team to confirm** (instructor-provided or ours) |
-| Kafka | Interaction and lifecycle events | Local: Compose (`apache/kafka:3.8.0`). Cluster: **Team to confirm** |
-| GitHub and Actions | Source, reviews, CI/CD on hosted `ubuntu-latest` runners | In use. CI runs on PR #22 |
-| GHCR | Holds images, which are deployed by `sha256` digest | Pushes happen only on `main` and tags, so nothing has been published yet |
-| Shared k3s cluster | Runs our namespaces behind Traefik Ingress | **Team to confirm** access, namespaces and hosts |
+| PostgreSQL 16 | Docker Compose | TBD, ask the instructor |
+| Kafka | Docker Compose (`apache/kafka:3.8.0`) | TBD, ask the instructor |
+| GitHub Actions | Runs on PR #22 | Same |
+| GHCR | Not used | Images pushed from `main` only, none yet |
+| Shared k3s | Not used | Access, namespaces and hosts TBD |
 
 ## Trust boundaries
 
-1. **Browser to Ingress.** The browser is untrusted. Angular keeps the JWT in memory and adds it to calls, but that's convenience, not security.
-2. **Ingress to API.** Spring Security is the gate. No token or a bad one gets `401`, and the wrong role gets `403`. The API accepts `X-Correlation-Id` if it's safe (64 characters at most, letters, digits and `._:-`), otherwise it generates one, and it echoes the value back.
-3. **API to PostgreSQL and Kafka.** Inside the cluster only, never exposed through Ingress. Credentials come from the `crm-secrets` Kubernetes Secret.
-4. **GitHub to cluster.** Only the `capstone-deploy` job, behind a GitHub Environment approval, holds cluster credentials.
+The browser is untrusted. Spring Security is the gate: no token or a bad one gets `401`, and the wrong role gets `403`. PostgreSQL and Kafka are never exposed through the Ingress. Only the `capstone-deploy` job holds cluster credentials, and only after approval.
