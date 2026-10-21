@@ -4,7 +4,10 @@
       <p class="eyebrow">Customer activity</p>
       <h2>Interactions</h2>
     </div>
-    <p class="customer">Recording for <code>{{ customerId() }}</code></p>
+    <p class="customer">
+      Recording for <code data-testid="selected-customer">{{ customerId() }}</code>
+      · correlation <code data-testid="correlation-id">{{ correlationId }}</code>
+    </p>
   </div>
   <div class="page-actions">
     <a
@@ -14,10 +17,6 @@
       data-testid="new-interaction"
     >New interaction</a>
   </div>
-
-  @if (error()) {
-    <p class="error" role="alert">{{ error() }}</p>
-  }
 
   <form class="customer-picker" (ngSubmit)="useCustomer()">
     <label for="customer-id">Choose a customer or enter a public ID</label>
@@ -37,10 +36,21 @@
           <option [value]="customer.customerId" [label]="customer.fullName + ' (' + customer.status + ')'"></option>
         }
       </datalist>
-      <button type="submit" data-testid="load-customer">Load activity</button>
+      <button type="submit" data-testid="load-interactions" [disabled]="loading()">
+        {{ loading() ? 'Loading…' : 'Load activity' }}
+      </button>
     </div>
+    <p class="demo-customers">
+      Demo customers:
+      <button type="button" class="back-button" data-testid="customer-amina" (click)="chooseCustomer('CUS-1001')">
+        Amina Khan (CUS-1001)
+      </button>
+      <button type="button" class="back-button" data-testid="customer-ravi" (click)="chooseCustomer('CUS-1002')">
+        Ravi Singh (CUS-1002)
+      </button>
+    </p>
     @if (customerError()) {
-      <p class="error" role="alert">{{ customerError() }}</p>
+      <p class="error" role="alert" data-testid="customer-error">{{ customerError() }}</p>
     }
   </form>
 
@@ -52,19 +62,28 @@
         name="summary"
         [(ngModel)]="summary"
         required
+        maxlength="1024"
         data-testid="summary"
         placeholder="What happened?"
       />
-      <button type="submit" data-testid="create">Record note</button>
+      <button type="submit" data-testid="create" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Record note' }}
+      </button>
     </div>
   </form>
+
+  @if (error()) {
+    <p class="error" role="alert" data-testid="list-error">{{ error() }}</p>
+  }
 
   <div class="activity-heading">
     <h3>Recent activity</h3>
     <span>{{ rows().length }} records</span>
   </div>
-  @if (rows().length === 0) {
-    <p class="empty-state">No interactions yet. Add a note to get started.</p>
+  @if (loading()) {
+    <p class="empty-state" role="status" data-testid="loading">Loading interactions…</p>
+  } @else if (!error() && rows().length === 0) {
+    <p class="empty-state" data-testid="empty-state">No interactions yet. Add a note to get started.</p>
   } @else {
     <ul class="activity-list">
       @for (row of rows(); track row.id) {

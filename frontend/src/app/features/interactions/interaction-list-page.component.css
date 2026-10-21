@@ -262,3 +262,18 @@ button:hover {
     gap: 0.35rem;
   }
 }
+
+.demo-customers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  color: #536987;
+  font-size: 0.9rem;
+}
+
+.demo-customers button {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+}

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 import { CustomerApiService } from '../customers/customer-api.service';
 import { InteractionApiService } from './interaction-api.service';
 import { InteractionListPageComponent } from './interaction-list-page.component';
@@ -52,9 +53,58 @@ describe('InteractionListPageComponent', () => {
     const component = fixture.componentInstance;
     component.customerIdInput = 'CUS-1002';
     component.useCustomer();
+    component.summary = '  Called about renewal  ';
     component.create();
 
     expect(api.list).toHaveBeenCalledWith('CUS-1002');
-    expect(api.create).toHaveBeenCalledWith(jasmine.objectContaining({ customerId: 'CUS-1002' }));
+    expect(api.create).toHaveBeenCalledWith({
+      customerId: 'CUS-1002',
+      interactionType: 'NOTE',
+      summary: 'Called about renewal',
+      correlationId: 'lab-request-001',
+    });
+    expect(component.summary).toBe('');
+  });
+
+  it('shows the correlation id and switches customers with the demo buttons', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('[data-testid="correlation-id"]')?.textContent).toBe('lab-request-001');
+
+    (el.querySelector('[data-testid="customer-ravi"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(api.list).toHaveBeenCalledWith('CUS-1002');
+    expect(el.querySelector('[data-testid="selected-customer"]')?.textContent).toBe('CUS-1002');
+  });
+
+  it('does not record an empty note', () => {
+    fixture.componentInstance.summary = '   ';
+    fixture.componentInstance.create();
+    fixture.detectChanges();
+
+    expect(api.create).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[data-testid="list-error"]').textContent).toContain(
+      'Write a note',
+    );
+  });
+
+  it('shows the Problem Details message when the timeline fails to load', () => {
+    api.list.and.returnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 404,
+            error: { title: 'Not Found', detail: 'Customer CUS-9999 was not found' },
+          }),
+      ),
+    );
+    fixture.componentInstance.customerIdInput = 'CUS-9999';
+    fixture.componentInstance.useCustomer();
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('[data-testid="list-error"]')?.textContent).toContain('CUS-9999');
+    expect(el.querySelector('[data-testid="empty-state"]')).toBeNull();
+    expect(fixture.componentInstance.loading()).toBeFalse();
   });
 });
