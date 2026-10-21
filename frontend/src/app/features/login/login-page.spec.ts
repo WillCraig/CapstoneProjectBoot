@@ -56,5 +56,8 @@ describe('LoginPageComponent', () => {
     const fixture = TestBed.createComponent(LoginPageComponent);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('img')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="xss-probe"]').textContent).toContain(
+      '<img src=x onerror=alert(1)>',
+    );
   });
 });

@@ -32,5 +32,9 @@
       {{ busy() ? 'Signing in…' : 'Sign in' }}
     </button>
   </form>
-  <p class="security-note">Demo credentials are configured on the backend.</p>
+  <p class="security-note">
+    Demo users: <code>agent</code> (AGENT) and <code>admin</code> (AGENT + ADMIN). Passwords come
+    from the backend configuration.
+  </p>
+  <p class="security-note" data-testid="xss-probe">XSS probe (must stay text): {{ xssProbe }}</p>
 </section>
