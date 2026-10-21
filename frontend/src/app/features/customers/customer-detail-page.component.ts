@@ -3,6 +3,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../core/api-error';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
+import { CelebrationService } from '../../core/celebration.service';
 import { CustomerApiService } from './customer-api.service';
 import { Customer } from './customer.model';
 
@@ -84,6 +85,7 @@ export class CustomerDetailPageComponent implements OnInit {
   private readonly api = inject(CustomerApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly celebration = inject(CelebrationService);
   readonly session = inject(AuthSessionService);
 
   readonly customer = signal<Customer | null>(null);
@@ -108,6 +110,8 @@ export class CustomerDetailPageComponent implements OnInit {
     this.api.delete(current.customerId).subscribe({
       next: () => {
         this.closing.set(false);
+        // Only after the API succeeds; the confetti canvas survives the navigation.
+        this.celebration.celebrate();
         void this.router.navigate(['/customers']);
       },
       error: (err) => {

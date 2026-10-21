@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 import { AuthSessionService, LoginResponse } from '../../core/auth/auth-session.service';
+import { CelebrationService } from '../../core/celebration.service';
 import { CustomerApiService } from './customer-api.service';
 import { CustomerDetailPageComponent } from './customer-detail-page.component';
 import { CustomerFormPageComponent } from './customer-form-page.component';
@@ -38,6 +40,7 @@ function statusOptionsIn(fixture: ComponentFixture<CustomerFormPageComponent>): 
 describe('customer pages', () => {
   let api: jasmine.SpyObj<CustomerApiService>;
   let router: Router;
+  let celebration: jasmine.SpyObj<CelebrationService>;
 
   function configure(routeId?: string) {
     return TestBed.configureTestingModule({
@@ -45,6 +48,7 @@ describe('customer pages', () => {
       providers: [
         provideRouter([]),
         { provide: CustomerApiService, useValue: api },
+        { provide: CelebrationService, useValue: celebration },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -71,6 +75,7 @@ describe('customer pages', () => {
     api.getById.and.returnValue(of(amina));
     api.update.and.returnValue(of({ ...amina, status: 'CLOSED' }));
     api.delete.and.returnValue(of(undefined));
+    celebration = jasmine.createSpyObj<CelebrationService>('CelebrationService', ['celebrate']);
   });
 
   it('detail page loads the profile and closes the customer', async () => {
@@ -85,7 +90,26 @@ describe('customer pages', () => {
 
     fixture.componentInstance.close();
     expect(api.delete).toHaveBeenCalledWith('CUS-1001');
+    expect(celebration.celebrate).toHaveBeenCalledTimes(1);
     expect(navigate).toHaveBeenCalledWith(['/customers']);
+  });
+
+  it('detail page shows the error and skips confetti when the close is refused', async () => {
+    api.delete.and.returnValue(
+      throwError(() => new HttpErrorResponse({ status: 403, statusText: 'Forbidden' })),
+    );
+    await configure('CUS-1001');
+    router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate').and.returnValue(Promise.resolve(true));
+    const fixture = TestBed.createComponent(CustomerDetailPageComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.close();
+
+    expect(api.delete).toHaveBeenCalledWith('CUS-1001');
+    expect(celebration.celebrate).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.error()).toBeTruthy();
   });
 
   it('form page without an id creates and routes to the new profile', async () => {
