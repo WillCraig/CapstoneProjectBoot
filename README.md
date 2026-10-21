@@ -94,12 +94,18 @@ The backend refuses to start without `CRM_JWT_SECRET`. The `local` profile
 | `agent` | AGENT | `agent-local-dev` |
 | `admin` | AGENT, ADMIN | `admin-local-dev` |
 
-Open http://localhost:4200, sign in as `agent`, and search for a customer. Only `admin`
+Open http://localhost:4200, sign in as `agent`, and pick **Look up a customer** on the home
+screen to search. Only `admin`
 can close a customer or reopen a closed one, whether by the close button or by setting the
 status in the edit form (the API returns 403 for `agent`; the UI hides those options).
 
 Health: `GET /actuator/health/readiness` and `/actuator/health/liveness` (public).
 Selenium UI test: see [frontend/e2e/README.md](frontend/e2e/README.md).
+
+Changing the look: site-wide styles are in `frontend/src/styles.css`, the header in
+`frontend/src/app/app.component.html` / `.css`, and each page's styles in its feature folder
+(`customer-pages.component.css` for the customer pages, `interaction-list-page.component.css`
+for the interaction pages, `login-page.component.css` for sign-in).
 
 Test data:
 

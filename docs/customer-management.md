@@ -220,6 +220,16 @@ Exercise 5 asks students to be able to name.
 
 ## 5. Frontend design
 
+> **Update (feature/jason-frontend, Oct 21 2026):** Jason's UI now sits on top of this
+> design. Login and unknown routes land on a **home screen** (`/home`,
+> `customer-choices-page`) with three cards: create a customer, look up a customer, and
+> customer interactions. `/customers` is Jason's **lookup table**
+> (`customer-lookup-page`: search, status filter, ID sort, Profile/Edit links), which
+> replaced `customer-list-page` (removed). The single form below and the profile page are
+> unchanged in logic (admin-only CLOSED rule included) and now use Jason's card styling
+> (`customer-pages.component.css`). Routes are eagerly imported rather than lazy-loaded.
+> The rest of this section is the original design record.
+
 New feature folder: `frontend/src/app/features/customers/`, mirroring the interactions
 feature file for file:
 
@@ -314,7 +324,7 @@ constraints are behavior, and mocks cannot testify about them.
 Same commands as the rest of the capstone (see the root README). With the backend on
 :8081 and the frontend on :4200, sign in as `agent` (or `admin`, needed to close a
 customer); local-profile passwords are in `backend/src/main/resources/application-local.yml`.
-The app lands on Customers.
+The app lands on the home screen; choose *Look up a customer* to start the demo path.
 
 A five-minute manual verification — and the natural Lab 52 demo order:
 
@@ -330,7 +340,7 @@ A five-minute manual verification — and the natural Lab 52 demo order:
 5. Negative paths: open the profile URL `/customers/CUS-9999` directly for the Problem
    Detail message; try creating a customer with a blank name for the field-level
    validation error.
-6. Close Priya from her profile. The app returns to the Customers list, where she now
+6. Close Priya from her profile. The app returns to the customer lookup table, where she now
    shows status `CLOSED`, and her profile URL still resolves — the audit-preserving
    delete from §4.4.
 
