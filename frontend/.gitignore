@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Local responsive audit screenshots (before/after). Not part of the app.
+/responsive-screenshots
