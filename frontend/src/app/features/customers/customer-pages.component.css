@@ -112,6 +112,13 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
+/* Phones stack the heading. A 16rem flex-basis would become height and leave a gap. */
+@media (max-width: 40rem) {
+  .page-heading > div {
+    flex: 0 1 auto;
+  }
+}
+
 .page-heading h1 {
   margin-bottom: 0;
 }
