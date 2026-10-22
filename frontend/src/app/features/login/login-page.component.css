@@ -1,8 +1,8 @@
 :host {
   display: block;
-  max-width: 440px;
+  max-width: 27.5rem;
   margin: 5rem auto;
-  padding: 0 1.25rem;
+  padding-inline: var(--page-gutter);
 }
 /*
 .login-card {
@@ -95,18 +95,19 @@ button:disabled {
 }
 
 .password-field input {
-  padding-right: 4.5rem;
+  min-height: 3rem;
+  padding-right: 5.25rem;
 }
 
 .password-field .password-toggle {
   position: absolute;
   top: 50%;
-  right: 0.4rem;
+  right: 0.35rem;
   width: auto;
-  min-block-size: 1.5rem;
-  min-inline-size: 1.5rem;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
   margin: 0;
-  padding: 0.35rem 0.65rem;
+  padding: 0.35rem 0.75rem;
   transform: translateY(-50%);
   border-radius: 6px;
   background: transparent;
@@ -128,4 +129,14 @@ button:disabled {
   border-radius: 8px;
   background: #fff0ef;
   color: #a32922;
+}
+
+@media (max-width: 40rem) {
+  :host {
+    margin-block: 1.25rem;
+  }
+
+  .login-card {
+    padding: var(--card-padding);
+  }
 }

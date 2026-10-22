@@ -30,13 +30,9 @@ import { CustomerStatus } from './customer.model';
       } @else {
         <form class="customer-form" (ngSubmit)="save()">
           <label for="public-id">Public ID</label>
-          <input
-            id="public-id"
-            name="publicId"
-            [value]="customerId || 'Assigned automatically when created'"
-            readonly
-            aria-describedby="public-id-help"
-          />
+          <p id="public-id" class="readonly-value" aria-describedby="public-id-help">
+            {{ customerId || 'Assigned automatically when created' }}
+          </p>
           <span id="public-id-help" class="field-help">
             This ID is assigned by the system and cannot be changed.
           </span>

@@ -1,12 +1,12 @@
 :host {
   display: block;
-  max-width: 1000px;
+  max-width: var(--content-max);
   margin: 2rem auto;
-  padding: 0 1.25rem;
+  padding-inline: var(--page-gutter);
 }
 
 .page-card {
-  padding: 2rem;
+  padding: var(--card-padding);
   border: 1px solid #dce3ec;
   border-radius: 16px;
   background: #fff;
@@ -42,13 +42,14 @@ h1 {
 
 .choice-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
   gap: 1rem;
   margin-top: 2rem;
 }
 
 .choice-card {
   display: flex;
+  min-width: 0;
   min-height: 220px;
   flex-direction: column;
   padding: 1.25rem;
@@ -96,9 +97,15 @@ h1 {
 .page-heading,
 .filters {
   display: flex;
+  flex-wrap: wrap;
   align-items: end;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.page-heading > div {
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .page-heading {
@@ -128,7 +135,7 @@ h1 {
 }
 
 select {
-  min-width: 180px;
+  min-width: min(100%, 11.25rem);
   padding: 0.65rem 0.75rem;
   border: 1px solid #667c96;
   border-radius: 8px;
@@ -316,29 +323,4 @@ button:disabled {
   border-radius: 8px;
   background: #e6f5ed;
   color: #17653b;
-}
-@media (max-width: 720px) {
-  .choice-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .choice-card {
-    min-height: auto;
-  }
-}
-
-@media (max-width: 520px) {
-  .page-card {
-    padding: 1.25rem;
-  }
-
-  .page-heading,
-  .filters {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  select {
-    width: 100%;
-  }
 }
