@@ -9,21 +9,25 @@ import { InteractionDetailPageComponent } from './features/interactions/interact
 import { InteractionListPageComponent } from './features/interactions/interaction-list-page.component';
 import { LoginPageComponent } from './features/login/login-page.component';
 
+const site = 'Northstar CRM';
+
 export const routes: Routes = [
-  { path: 'login', component: LoginPageComponent },
-  { path: 'home', component: CustomerChoicesPageComponent, canActivate: [authGuard] },
-  { path: 'customers', component: CustomerLookupPageComponent, canActivate: [authGuard] },
-  { path: 'customers/new', component: CustomerFormPageComponent, canActivate: [authGuard] },
-  { path: 'customers/:id/edit', component: CustomerFormPageComponent, canActivate: [authGuard] },
-  { path: 'customers/:id', component: CustomerDetailPageComponent, canActivate: [authGuard] },
-  { path: 'interactions', component: InteractionListPageComponent, canActivate: [authGuard] },
+  { path: 'login', title: `Sign in | ${site}`, component: LoginPageComponent },
+  { path: 'home', title: `Home | ${site}`, component: CustomerChoicesPageComponent, canActivate: [authGuard] },
+  { path: 'customers', title: `Look up a customer | ${site}`, component: CustomerLookupPageComponent, canActivate: [authGuard] },
+  { path: 'customers/new', title: `Create new customer | ${site}`, component: CustomerFormPageComponent, canActivate: [authGuard] },
+  { path: 'customers/:id/edit', title: `Update customer | ${site}`, component: CustomerFormPageComponent, canActivate: [authGuard] },
+  { path: 'customers/:id', title: `Customer profile | ${site}`, component: CustomerDetailPageComponent, canActivate: [authGuard] },
+  { path: 'interactions', title: `Interactions | ${site}`, component: InteractionListPageComponent, canActivate: [authGuard] },
   {
     path: 'interactions/new',
+    title: `Record an interaction | ${site}`,
     component: InteractionCreatePageComponent,
     canActivate: [authGuard],
   },
   {
     path: 'interactions/:id',
+    title: `Interaction details | ${site}`,
     component: InteractionDetailPageComponent,
     canActivate: [authGuard],
   },

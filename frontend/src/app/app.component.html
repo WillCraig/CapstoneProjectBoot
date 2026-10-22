@@ -1,16 +1,33 @@
+<a class="skip-link" href="#main-content">Skip to content</a>
 <header>
-  <a class="brand" routerLink="/home">Northstar CRM</a>
+  <a
+    class="brand"
+    routerLink="/home"
+    routerLinkActive="is-current"
+    ariaCurrentWhenActive="page"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >Northstar CRM</a>
   @if (session.accessToken()) {
-    <nav aria-label="Main navigation">
-      <a routerLink="/customers">Customers</a>
-      <a routerLink="/customers/new">New customer</a>
-      <a routerLink="/interactions">Interactions</a>
-      <a routerLink="/interactions/new">New interaction</a>
+    <nav aria-label="Primary">
+      <ul role="list">
+        <li role="listitem">
+          <a routerLink="/customers" routerLinkActive="is-current" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">Customers</a>
+        </li>
+        <li role="listitem">
+          <a routerLink="/customers/new" routerLinkActive="is-current" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">New customer</a>
+        </li>
+        <li role="listitem">
+          <a routerLink="/interactions" routerLinkActive="is-current" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">Interactions</a>
+        </li>
+        <li role="listitem">
+          <a routerLink="/interactions/new" routerLinkActive="is-current" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">New interaction</a>
+        </li>
+      </ul>
       <span data-testid="signed-in-user">{{ session.username() }} ({{ session.roles().join(', ') }})</span>
       <button type="button" data-testid="logout" (click)="logout()">Log out</button>
     </nav>
   }
 </header>
-<main>
+<main id="main-content" tabindex="-1">
   <router-outlet />
 </main>

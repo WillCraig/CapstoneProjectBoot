@@ -22,13 +22,13 @@
   text-transform: uppercase;
 }
 
+h1,
 h2,
-h3,
 p {
   margin-top: 0;
 }
 
-h2 {
+h1 {
   margin-bottom: 0.5rem;
   color: #142b49;
   font-size: 1.75rem;
@@ -74,7 +74,7 @@ h2 {
   letter-spacing: 0.08em;
 }
 
-.choice-card h3 {
+.choice-card h2 {
   margin-bottom: 0.5rem;
   color: #142b49;
   font-size: 1.1rem;
@@ -105,7 +105,7 @@ h2 {
   margin-bottom: 1.5rem;
 }
 
-.page-heading h2 {
+.page-heading h1 {
   margin-bottom: 0;
 }
 
@@ -130,7 +130,7 @@ h2 {
 select {
   min-width: 180px;
   padding: 0.65rem 0.75rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #667c96;
   border-radius: 8px;
   background: #fff;
   color: #253b57;
@@ -237,7 +237,7 @@ code {
   width: 100%;
   min-width: 0;
   padding: 0.75rem 0.85rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #667c96;
   border-radius: 8px;
   background: #fff;
   color: #253b57;
