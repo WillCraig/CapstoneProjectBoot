@@ -83,14 +83,20 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         .body(problem);
   }
 
-  /** Framework MVC errors (missing param, unreadable body, ...) also carry the correlation id. */
+  /**
+   * Framework MVC errors (missing param, unreadable body, ...) also carry the correlation id.
+   * Some arrive with a null body (a missing query parameter, for one) and the superclass builds
+   * the ProblemDetail itself, so the id is added to the body it returns.
+   */
   @Override
   protected ResponseEntity<Object> handleExceptionInternal(
       Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
-    if (body instanceof ProblemDetail problem) {
+    ResponseEntity<Object> response =
+        super.handleExceptionInternal(ex, body, headers, statusCode, request);
+    if (response != null && response.getBody() instanceof ProblemDetail problem) {
       withCorrelation(problem);
     }
-    return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+    return response;
   }
 
   static ProblemDetail withCorrelation(ProblemDetail problem) {

@@ -272,4 +272,20 @@ class InteractionControllerTest {
 
     verify(interactionService, never()).create(any(), any());
   }
+
+  /** Missing customerId is a framework 400; it carries the request correlation id like the rest. */
+  @Test
+  void list_missingCustomerId_shouldCarryTheRequestCorrelationId() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/interactions")
+                .header("Authorization", bearer)
+                .header("X-Correlation-Id", "missing-param-001"))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.correlationId").value("missing-param-001"));
+
+    verify(interactionService, never()).list(any());
+  }
 }
