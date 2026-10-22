@@ -128,7 +128,10 @@ To stop everything: `docker compose down` (add `-v` to wipe the database).
   in use` from `ng serve`): run `lsof -nP -iTCP:5432 -iTCP:9092 -iTCP:8081 -iTCP:4200 -sTCP:LISTEN`
   and `docker ps`. Stop the other project's container (`docker stop <name>`; its data is kept)
   or process, or run Angular on 4201 (`npx ng serve --port 4201`). The backend only allows
-  browser origins 4200 and 4201, so other ports get a CORS 403 on login.
+  browser origins 4200 and 4201 (on `localhost` or `127.0.0.1`), so other ports get a CORS 403 on login.
+- **`127.0.0.1:4200` does not load:** `ng serve` is set to listen on `127.0.0.1` in
+  `angular.json`, so both `http://localhost:4200` and `http://127.0.0.1:4200` work. An older
+  checkout listened only on IPv6 `::1`, where only `localhost` worked.
 - **Login fails or the app shows the old demo-token screen:** an old backend is still running
   on 8081. Stop it (Ctrl+C, or `pkill -f spring-boot:run`), start it again with the command
   above, and hard-refresh the browser.
