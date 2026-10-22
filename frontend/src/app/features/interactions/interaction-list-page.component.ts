@@ -120,6 +120,9 @@ export class InteractionListPageComponent {
   }
 
   remove(row: Interaction): void {
+    const customer = this.customers().find((c) => c.customerId === row.customerId);
+    const who = customer ? `${customer.fullName} (${row.customerId})` : row.customerId;
+    if (!window.confirm(`Delete "${row.summary}" for ${who}?`)) return;
     this.savedNotice.set('');
     this.error.set(null);
     this.api.delete(row.id).subscribe({
