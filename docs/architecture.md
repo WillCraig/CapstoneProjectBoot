@@ -1,72 +1,68 @@
-# Northstar CRM Architecture
+# Northstar CRM architecture
 
-Agents search a customer, open the profile, and record an interaction (call, email, note, meeting). The Angular app talks to a Spring Boot REST API. The API checks the JWT, saves the note in PostgreSQL, then publishes a versioned Kafka event. GitHub Actions builds and scans the change and deploys a digest-pinned image to the shared k3s cluster behind Traefik Ingress.
+Agents log in, find a customer and record interactions (calls, emails, notes, meetings). Admins can also close and reopen customers. Angular calls our Spring Boot REST API, which checks the JWT, saves to PostgreSQL and then publishes a Kafka event. GitHub Actions builds and tests everything once, and we deploy the image digests to k3s.
 
-## Stack
-
-| Layer | Choice |
+| Layer | Tech |
 | --- | --- |
-| Frontend | Angular |
-| API | REST / OpenAPI |
-| Backend | Spring Boot |
-| Database | PostgreSQL |
+| Frontend | Angular 19 |
+| Backend | Spring Boot 3.3, Java 21 |
+| Security | JWT, roles AGENT and ADMIN |
+| Database | PostgreSQL 16 + Flyway |
 | Messaging | Kafka |
-| Containers | Docker |
-| Runtime | k3s (Traefik Ingress) |
+| Deploy | Docker, GHCR, k3s with Traefik |
 | CI/CD | GitHub Actions |
-| IaC | Terraform / Ansible |
+| IaC | Terraform and Ansible (validate only for now) |
 
-## Non-goals
+## Mandatory runtime path
+Angular SPA → REST (JWT) → Spring Boot → PostgreSQL  
+Spring Boot ↔ Kafka
 
-Not the taught path: **React**, **SOAP**, **Oracle**, **Bitbucket Pipelines**, and **OpenShift** (`oc`, Routes). We deploy to the **shared k3s cluster**.
+## Mandatory delivery path
+GitHub → Actions (security / test / build) → k3s
 
-## Runtime path
+## Non-goals (do not teach as primary path)
+- Bitbucket Pipelines
+- Oracle
+- React
+- SOAP
 
-Angular SPA → REST (JWT) → Spring Boot → PostgreSQL.
+The rubric mentions OpenShift but the labs use k3s, so we went with k3s. TBD, ask the instructor.
 
-Spring Boot also talks to Kafka for versioned events, but **PostgreSQL is the system of record**. The API saves the interaction first, commits, then publishes. Kafka never replaces the database. If the customer is missing (`CUS-9999`), the API returns 404 and writes nothing and publishes nothing.
+## Diagrams
 
-Fixtures: `CUS-1001` Amina Khan (ACTIVE), `CUS-1002` Ravi Singh (PROSPECT), `CUS-9999` not found. Default correlation id `lab-request-001`.
-
-## Delivery path
-
-GitHub → Actions (test, scan, build) → image digest → shared k3s. The delivery Mermaid lives with the Actions plan (#11). The Kafka Mermaid and event field freeze live with the event ADR (#6).
-
-## Application path
-
-Left to right: browser app calls the API; the API saves to the database, then may publish an event.
+Application and security. The interceptor adds the token, but the API does the real check.
 
 ```mermaid
 flowchart LR
-  A[Angular] -->|REST with JWT| B[Spring Boot]
-  B --> C[(PostgreSQL)]
-  B -->|after save| D[Kafka]
+  UI["Angular<br/>auth interceptor"] -->|"REST + Bearer JWT"| SEC["Spring Security"]
+  SEC -->|"401 / 403 if bad"| UI
+  SEC --> API["Spring Boot API"]
+  API --> PG[("PostgreSQL")]
+  API -->|"after commit"| K[["Kafka"]]
 ```
 
-## JWT interceptor and customer fixtures
-
-After sign-in, Angular keeps the JWT in memory and an HTTP interceptor sticks `Authorization: Bearer …` (plus a correlation id) on each API call. Spring Security on the server is the real gate (bad token → 401, wrong role → 403). The interceptor is only for convenience.
-
-Same call path for every customer id. Known customers succeed; the missing one does not.
+Messaging. Events go out after the DB commit, consumers skip duplicates, and failures end up on a DLT.
 
 ```mermaid
-flowchart TD
-  A[Agent uses Angular] --> B[Interceptor adds JWT]
-  B --> C[Spring Boot API]
-  C --> D{Customer id?}
-  D -->|CUS-1001 Amina or CUS-1002 Ravi| E[Save in PostgreSQL then optional Kafka]
-  E --> F[200 or 201]
-  D -->|CUS-9999| G[404 — no row, no event]
+flowchart LR
+  API["Spring Boot"] --> T1[["crm.customer.interactions.v1"]]
+  API --> T2[["crm.customer.lifecycle.v1"]]
+  T1 --> C["audit consumers"]
+  T2 --> C
+  C -.->|"fails 3 times"| DLT[[".DLT"]]
 ```
 
-## Architecture decisions
+Delivery.
 
-Short ADRs (written under issues #6, #8, and #11):
+```mermaid
+flowchart LR
+  PR["PR"] --> CI["Actions: test, scan, build"]
+  CI -->|"merge to main"| GHCR["GHCR image digests"]
+  GHCR --> DEP["manual deploy + approval"]
+  DEP --> K3S["k3s + smoke test"]
+```
 
-| Decision | ADR (lands with) |
-| --- | --- |
-| Event contract (`CustomerInteractionRecordedV1`, topic, publish-after-commit) | [docs/adrs/001-event-contract.md](adrs/001-event-contract.md) (#6) |
-| PostgreSQL as system of record (not Oracle) | [docs/adrs/002-postgresql.md](adrs/002-postgresql.md) (#8) |
-| GitHub Actions on a self-hosted runner → digest deploy to k3s | [docs/adrs/003-github-actions-self-hosted-runner.md](adrs/003-github-actions-self-hosted-runner.md) (#11) |
-
-Those files are created by their issues. This overview links them so the Lab 48 pack stays one story.
+## ADRs
+1. [Kafka events after commit](adrs/001-event-contract.md)
+2. [PostgreSQL](adrs/002-postgresql.md)
+3. [GitHub Actions, build once](adrs/003-github-actions-digest-promotion.md)

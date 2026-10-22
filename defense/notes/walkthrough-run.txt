@@ -1,0 +1,117 @@
+# bash defense/demo-walkthrough.sh, AUTO=1, run 2026-10-22 08:26 ET
+# Local stack: backend from this branch on 8081, crm-postgres, crm-kafka. Colors stripped. No token or password in this file.
+# The NOTE was created through the API with X-Correlation-Id lab-request-001 just before (same as saving it in the UI).
+
+== 1. Is the app up? ==
+Checking the API's readiness endpoint.
+$ curl http://localhost:8081/actuator/health/readiness
+✔ API is up
+
+== 2. Our two test customers ==
+Amina should be ACTIVE, Ravi should be PROSPECT.
+$ SELECT public_id, full_name, status FROM customer ...
+ public_id | full_name  |  status  
+-----------+------------+----------
+ CUS-1001  | Amina Khan | ACTIVE
+ CUS-1002  | Ravi Singh | PROSPECT
+(2 rows)
+
+✔ Amina is ACTIVE, Ravi is PROSPECT
+
+== 3. Sign in as the agent ==
+The token stays in this shell only. It is never printed.
+$ POST http://localhost:8081/api/v1/auth/login  (user: agent)
+✔ Signed in as agent (token good for 15 minutes)
+
+== 4. The note is in Postgres ==
+Postgres is the source of truth. Looking for correlation lab-request-001.
+$ SELECT ... FROM customer_interaction WHERE correlation_id = 'lab-request-001'
+ public_id | interaction_type | correlation_id  | visible 
+-----------+------------------+-----------------+---------
+ CUS-1001  | NOTE             | lab-request-001 | t
+ CUS-1001  | NOTE             | lab-request-001 | f
+ CUS-1001  | NOTE             | lab-request-001 | f
+(3 rows)
+
+✔ Found a visible NOTE for CUS-1001
+
+== 5. The event went out on Kafka ==
+After the save, we publish CustomerInteractionRecorded. The summary is NOT in the event.
+$ kafka-console-consumer --topic crm.customer.interactions.v1
+{
+    "eventId": "616fcea8-5bb7-4073-80c3-0c237899422b",
+    "eventType": "CustomerInteractionRecorded",
+    "eventVersion": 1,
+    "occurredAt": 1792671988.857309,
+    "correlationId": "lab-request-001",
+    "actor": "agent",
+    "customerId": "CUS-1001",
+    "interactionId": "7b0e9103-5f24-444b-bc60-8306b1c53479",
+    "interactionType": "NOTE"
+}
+✔ Event found for CUS-1001
+
+== 6. Bad input gets a clean error ==
+Sending a type of TEXT, which isn't allowed. Expect 400, not a stack trace.
+$ POST http://localhost:8081/api/v1/interactions  {interactionType: TEXT}
+HTTP 400
+{
+    "type": "about:blank",
+    "title": "Bad Request",
+    "status": 400,
+    "detail": "Validation failed",
+    "instance": "/api/v1/interactions",
+    "errors": [
+        "interactionType: interactionType must be CALL, EMAIL, NOTE, or MEETING"
+    ],
+    "correlationId": "lab-request-001"
+}
+✔ Rejected with 400
+
+== 7. An agent tries to close Ravi ==
+The UI already hides the Close button. This goes straight at the API. Expect 403.
+$ DELETE http://localhost:8081/api/v1/customers/CUS-1002  (as agent)
+HTTP 403
+{
+    "type": "about:blank",
+    "title": "Forbidden",
+    "status": 403,
+    "detail": "Your role does not allow this action.",
+    "instance": "/api/v1/customers/CUS-1002",
+    "correlationId": "lab-request-001"
+}
+✔ Blocked with 403
+
+And Ravi didn't change:
+$ GET http://localhost:8081/api/v1/customers/CUS-1002
+✔ Ravi is still PROSPECT
+
+== 8. Unknown customer ==
+Optional. Expect 404.
+$ GET http://localhost:8081/api/v1/customers/CUS-9999
+HTTP 404
+{
+    "type": "about:blank",
+    "title": "Not Found",
+    "status": 404,
+    "detail": "Unknown customer: CUS-9999",
+    "instance": "/api/v1/customers/CUS-9999",
+    "correlationId": "lab-request-001"
+}
+✔ 404 as expected
+
+== 9. A fake token ==
+No real sign-in, no access. Expect 401.
+$ GET http://localhost:8081/api/v1/customers/CUS-1001  (Authorization: Bearer not-a-real-jwt)
+HTTP 401
+{
+    "type": "about:blank",
+    "title": "Unauthorized",
+    "status": 401,
+    "detail": "Bearer token is invalid or expired.",
+    "instance": "/api/v1/customers/CUS-1001",
+    "correlationId": "lab-request-001"
+}
+✔ Rejected with 401
+
+✔ Demo done. Token cleared.
