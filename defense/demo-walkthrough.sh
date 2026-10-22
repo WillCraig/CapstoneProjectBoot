@@ -71,9 +71,9 @@ pause
 step "4. The note is in Postgres" "Postgres is the source of truth. Looking for correlation $CID."
 show "SELECT ... FROM customer_interaction WHERE correlation_id = '$CID'"
 docker exec crm-postgres psql -U crm -d crm -c \
-  "SELECT c.public_id, i.interaction_type, i.correlation_id, i.deleted_at IS NULL AS visible
+  "SELECT c.public_id, i.interaction_type, i.correlation_id, i.created_at
    FROM customer_interaction i JOIN customer c ON c.customer_id = i.customer_id
-   WHERE i.correlation_id = '$CID' ORDER BY i.created_at DESC LIMIT 3;"
+   WHERE i.correlation_id = '$CID' AND i.deleted_at IS NULL ORDER BY i.created_at DESC LIMIT 1;"
 NOTES=$(psqlq "SELECT count(*) FROM customer_interaction i JOIN customer c ON c.customer_id = i.customer_id
    WHERE i.correlation_id = '$CID' AND c.public_id = 'CUS-1001' AND i.interaction_type = 'NOTE' AND i.deleted_at IS NULL;")
 [ "${NOTES:-0}" -gt 0 ] && ok "Found a visible NOTE for CUS-1001" || bad "No visible NOTE for CUS-1001 yet. Save one in the UI first."
@@ -82,9 +82,15 @@ pause
 # ---------------------------------------------------------------
 step "5. The event went out on Kafka" "After the save, we publish CustomerInteractionRecorded. The summary is NOT in the event."
 show "kafka-console-consumer --topic crm.customer.interactions.v1"
+echo "${dim}Reading the topic from the start. This takes about 5 seconds...${reset}"
+# Read exactly as many messages as the topic holds, so the consumer stops right away
+# instead of sitting idle waiting for more. The timeout is only a safety net.
+TOTAL=$(docker exec crm-kafka /opt/kafka/bin/kafka-get-offsets.sh \
+  --bootstrap-server localhost:9092 --topic crm.customer.interactions.v1 2>/dev/null \
+  | awk -F: '{t+=$3} END{print t+0}')
 docker exec crm-kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 --topic crm.customer.interactions.v1 \
-  --from-beginning --timeout-ms 8000 2>/dev/null | grep "$CID" | grep 'CUS-1001' | tail -1 > /tmp/demo_event.$$
+  --from-beginning --max-messages "${TOTAL:-1}" --timeout-ms 10000 2>/dev/null | grep "$CID" | grep 'CUS-1001' | tail -1 > /tmp/demo_event.$$
 if [ -s /tmp/demo_event.$$ ]; then pretty < /tmp/demo_event.$$; ok "Event found for CUS-1001"; else bad "No event found for $CID"; fi
 rm -f /tmp/demo_event.$$
 pause
