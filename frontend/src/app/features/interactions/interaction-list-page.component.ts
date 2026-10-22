@@ -39,6 +39,9 @@ export class InteractionListPageComponent {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly customerError = signal<string | null>(null);
+  /** True when the note box itself was rejected, not when the timeline failed to load. */
+  readonly summaryInvalid = signal(false);
+  readonly savedNotice = signal('');
 
   constructor() {
     this.loadCustomers();
@@ -47,6 +50,7 @@ export class InteractionListPageComponent {
 
   /** Load the timeline for whatever is typed or picked in the customer box. */
   useCustomer(): void {
+    this.savedNotice.set('');
     const customerId = this.customerIdInput.trim();
     this.customerIdInput = customerId;
     if (!customerId) {
@@ -67,11 +71,14 @@ export class InteractionListPageComponent {
 
   /** Quick note: records a NOTE for the selected customer, then refreshes the timeline. */
   create(): void {
+    this.savedNotice.set('');
     const summary = this.summary.trim();
     if (!summary) {
+      this.summaryInvalid.set(true);
       this.error.set('Write a note before recording it.');
       return;
     }
+    this.summaryInvalid.set(false);
     this.error.set(null);
     this.saving.set(true);
     this.api
@@ -85,10 +92,12 @@ export class InteractionListPageComponent {
         next: () => {
           this.summary = '';
           this.saving.set(false);
+          this.savedNotice.set('Note recorded.');
           this.reload();
         },
         error: (err) => {
           this.saving.set(false);
+          this.summaryInvalid.set(true);
           this.error.set(apiErrorMessage(err, 'Could not record this note'));
         },
       });
@@ -111,6 +120,7 @@ export class InteractionListPageComponent {
   }
 
   remove(row: Interaction): void {
+    this.savedNotice.set('');
     this.error.set(null);
     this.api.delete(row.id).subscribe({
       next: () => this.reload(),

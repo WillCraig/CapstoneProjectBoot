@@ -23,10 +23,10 @@ import { Interaction, InteractionType } from './interaction.model';
           Back to interactions
         </a>
       </p>
-      <h2>Interaction details</h2>
+      <h1 tabindex="-1">Interaction details</h1>
 
       @if (error()) {
-        <p class="error" role="alert" data-testid="detail-error">{{ error() }}</p>
+        <p id="detail-interaction-error" class="error" role="alert" data-testid="detail-error">{{ error() }}</p>
       }
 
       @if (interaction(); as current) {
@@ -42,22 +42,32 @@ import { Interaction, InteractionType } from './interaction.model';
         </dl>
 
         <form class="interaction-form" (ngSubmit)="save()">
-          <label>
+          <label for="edit-interaction-type">
             Interaction type
-            <select name="interactionType" [(ngModel)]="interactionType" data-testid="edit-type">
+            <select
+              id="edit-interaction-type"
+              name="interactionType"
+              [(ngModel)]="interactionType"
+              [attr.aria-invalid]="error() ? true : null"
+              [attr.aria-describedby]="error() ? 'detail-interaction-error' : null"
+              data-testid="edit-type"
+            >
               @for (type of interactionTypes; track type) {
                 <option [value]="type">{{ type }}</option>
               }
             </select>
           </label>
-          <label>
+          <label for="edit-summary">
             Summary
             <textarea
+              id="edit-summary"
               name="summary"
               [(ngModel)]="summary"
               required
               maxlength="1024"
               rows="5"
+              [attr.aria-invalid]="error() ? true : null"
+              [attr.aria-describedby]="error() ? 'detail-interaction-error' : null"
               data-testid="edit-summary"
             ></textarea>
           </label>
@@ -69,10 +79,10 @@ import { Interaction, InteractionType } from './interaction.model';
           </button>
         </form>
         @if (saved()) {
-          <p class="success" data-testid="saved-message">Changes saved.</p>
+          <p class="success" role="status" data-testid="saved-message">Changes saved.</p>
         }
       } @else if (loading()) {
-        <p class="empty-state" role="status">Loading…</p>
+        <p class="empty-state">Loading…</p>
       }
     </section>
   `,

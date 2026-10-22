@@ -14,33 +14,55 @@ import { InteractionType } from './interaction.model';
   template: `
     <section class="interactions">
       <p class="eyebrow">Customer activity</p>
-      <h2>Record an interaction</h2>
+      <h1 tabindex="-1">Record an interaction</h1>
 
       @if (error()) {
-        <p class="error" role="alert" data-testid="create-error">{{ error() }}</p>
+        <p id="create-interaction-error" class="error" role="alert" data-testid="create-error">{{ error() }}</p>
       }
 
       <form class="interaction-form" (ngSubmit)="create()">
-        <label>
+        <label for="create-customer-id">
           Customer ID
-          <input name="customerId" [(ngModel)]="customerId" required data-testid="create-customer-id" />
+          <input
+            id="create-customer-id"
+            name="customerId"
+            [(ngModel)]="customerId"
+            required
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            [attr.aria-invalid]="error() ? true : null"
+            [attr.aria-describedby]="error() ? 'create-interaction-error' : null"
+            data-testid="create-customer-id"
+          />
         </label>
-        <label>
+        <label for="create-interaction-type">
           Interaction type
-          <select name="interactionType" [(ngModel)]="interactionType" data-testid="create-type">
+          <select
+            id="create-interaction-type"
+            name="interactionType"
+            [(ngModel)]="interactionType"
+            [attr.aria-invalid]="error() ? true : null"
+            [attr.aria-describedby]="error() ? 'create-interaction-error' : null"
+            data-testid="create-type"
+          >
             @for (type of interactionTypes; track type) {
               <option [value]="type">{{ type }}</option>
             }
           </select>
         </label>
-        <label>
+        <label for="create-summary">
           Summary
           <textarea
+            id="create-summary"
             name="summary"
             [(ngModel)]="summary"
             required
             maxlength="1024"
             rows="5"
+            [attr.aria-invalid]="error() ? true : null"
+            [attr.aria-describedby]="error() ? 'create-interaction-error' : null"
             data-testid="create-summary"
           ></textarea>
         </label>

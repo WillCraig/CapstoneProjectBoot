@@ -6,6 +6,9 @@
     --bp-laptop  64rem (1024px) tablet landscape / small laptop
 */
 :root {
+  /* Dark enough that an empty field's border still reads against white (WCAG 1.4.11). */
+  --control-border: #667c96;
+  --focus: #142b49;
   --page-gutter: 1.25rem;
   --card-padding: 2rem;
   --tap-min: 2.75rem;
@@ -27,6 +30,41 @@ body {
   font-family: system-ui, sans-serif;
   background: #f3f6fa;
   color: #253b57;
+}
+
+:where(a, button, input, select, textarea):focus-visible,
+main:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Route changes focus the page heading for assistive tech. That focus is not from the keyboard. */
+h1:focus:not(:focus-visible) {
+  outline: none;
+}
+
+::placeholder {
+  color: #536987;
+  opacity: 1;
+}
+
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choice-card {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 * {
@@ -65,7 +103,7 @@ dd {
   width: auto;
   min-width: 0;
   padding: 0.65rem 0.75rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   color: #253b57;
   font: inherit;
