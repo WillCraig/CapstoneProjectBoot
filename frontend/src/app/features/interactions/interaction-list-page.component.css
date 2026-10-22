@@ -35,15 +35,16 @@
   text-transform: uppercase;
 }
 
+h1,
 h2,
-h3,
 .customer {
   margin: 0;
 }
 
-h2 {
+h1 {
   color: #142b49;
   font-size: 1.75rem;
+  font-weight: 700;
 }
 
 .customer,
@@ -85,7 +86,7 @@ input {
   width: 100%;
   min-width: 0;
   padding: 0.75rem 0.85rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--control-border, #667c96);
   border-radius: 8px;
   font: inherit;
 }
@@ -110,9 +111,10 @@ button:hover {
   margin: 1.75rem 0 0.75rem;
 }
 
-.activity-heading h3 {
+.activity-heading h2 {
   color: #253b57;
   font-size: 1rem;
+  font-weight: 700;
 }
 
 .activity-list {
@@ -159,7 +161,7 @@ button:hover {
 .interaction-form textarea {
   width: 100%;
   padding: 0.75rem 0.85rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--control-border, #667c96);
   border-radius: 8px;
   background: #fff;
   color: #253b57;
@@ -192,6 +194,7 @@ button:hover {
 }
 
 .success {
+  margin-top: 1rem;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   background: #e6f5ed;

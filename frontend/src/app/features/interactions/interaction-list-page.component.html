@@ -2,7 +2,7 @@
   <div class="page-heading">
     <div>
       <p class="eyebrow">Customer activity</p>
-      <h2>Interactions</h2>
+      <h1 tabindex="-1">Interactions</h1>
     </div>
     <p class="customer">
       Recording for <code data-testid="selected-customer">{{ customerId() }}</code>
@@ -28,7 +28,12 @@
         list="customer-options"
         required
         autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
         placeholder="Customer public ID"
+        [attr.aria-invalid]="customerError() ? true : null"
+        [attr.aria-describedby]="customerError() ? 'customer-picker-error' : null"
         data-testid="customer-id"
       />
       <datalist id="customer-options">
@@ -50,7 +55,7 @@
       </button>
     </p>
     @if (customerError()) {
-      <p class="error" role="alert" data-testid="customer-error">{{ customerError() }}</p>
+      <p id="customer-picker-error" class="error" role="alert" data-testid="customer-error">{{ customerError() }}</p>
     }
   </form>
 
@@ -63,6 +68,8 @@
         [(ngModel)]="summary"
         required
         maxlength="1024"
+        [attr.aria-invalid]="summaryInvalid() ? true : null"
+        [attr.aria-describedby]="summaryInvalid() ? 'interaction-list-error' : null"
         data-testid="summary"
         placeholder="What happened?"
       />
@@ -72,28 +79,32 @@
     </div>
   </form>
 
+  @if (savedNotice()) {
+    <p class="success" role="status" data-testid="note-recorded">{{ savedNotice() }}</p>
+  }
+
   @if (error()) {
-    <p class="error" role="alert" data-testid="list-error">{{ error() }}</p>
+    <p id="interaction-list-error" class="error" role="alert" data-testid="list-error">{{ error() }}</p>
   }
 
   <div class="activity-heading">
-    <h3>Recent activity</h3>
+    <h2>Recent activity</h2>
     <span>{{ rows().length }} records</span>
   </div>
   @if (loading()) {
-    <p class="empty-state" role="status" data-testid="loading">Loading interactions…</p>
+    <p class="empty-state" data-testid="loading">Loading interactions…</p>
   } @else if (!error() && rows().length === 0) {
     <p class="empty-state" data-testid="empty-state">No interactions yet. Add a note to get started.</p>
   } @else {
-    <ul class="activity-list">
+    <ul class="activity-list" role="list">
       @for (row of rows(); track row.id) {
-        <li data-testid="interaction-row">
+        <li role="listitem" data-testid="interaction-row">
           <span class="type">{{ row.interactionType }}</span>
           <span class="summary">{{ row.summary }}</span>
           <time>{{ row.createdAt | date: 'medium' }}</time>
           <span class="row-actions">
-            <a [routerLink]="['/interactions', row.id]" data-testid="interaction-detail">Details</a>
-            <button type="button" data-testid="delete-interaction" (click)="remove(row)">Delete</button>
+            <a [routerLink]="['/interactions', row.id]" data-testid="interaction-detail">Details<span class="visually-hidden"> for {{ row.summary }}</span></a>
+            <button type="button" data-testid="delete-interaction" (click)="remove(row)">Delete<span class="visually-hidden"> {{ row.summary }}</span></button>
           </span>
         </li>
       }

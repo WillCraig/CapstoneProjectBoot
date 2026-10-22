@@ -19,7 +19,7 @@ import { Customer } from './customer.model';
   template: `
     <section class="page-card">
       <p class="eyebrow">Customer directory</p>
-      <h2>Customer profile</h2>
+      <h1 tabindex="-1">Customer profile</h1>
 
       @if (error()) {
         <p class="error" role="alert" data-testid="detail-error">{{ error() }}</p>
@@ -73,7 +73,7 @@ import { Customer } from './customer.model';
           <p class="field-help" data-testid="closed-message">This customer is closed. History is kept for audit.</p>
         }
       } @else if (loading()) {
-        <p class="empty-state" role="status">Loading customer…</p>
+        <p class="empty-state">Loading customer…</p>
       }
       <div class="page-actions">
         <a class="back-button" routerLink="/customers">Back to customers</a>
