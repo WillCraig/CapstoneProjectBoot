@@ -176,6 +176,7 @@ th,
 td {
   padding: 0.9rem 1rem;
   border-bottom: 1px solid #e5eaf0;
+  vertical-align: middle;
 }
 
 th {
