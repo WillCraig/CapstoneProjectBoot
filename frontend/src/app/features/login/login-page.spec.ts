@@ -72,6 +72,7 @@ describe('LoginPageComponent', () => {
     expect(input.type).toBe('password');
     expect(toggle.getAttribute('aria-label')).toBe('Show password');
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-controls')).toBe('login-password');
 
     toggle.click();
     fixture.detectChanges();
