@@ -65,8 +65,10 @@
               <td role="cell" data-label="Customer name">{{ customer.fullName }}</td>
               <td role="cell" data-label="Status"><span class="status" [class]="'status status-' + customer.status.toLowerCase()">{{ customer.status }}</span></td>
               <td role="cell" class="customer-actions" data-label="Actions">
-                <a class="table-action" [routerLink]="['/customers', customer.customerId]" data-testid="customer-profile">Profile<span class="visually-hidden"> for {{ customer.fullName }}</span></a>
-                <a class="table-action" [routerLink]="['/customers', customer.customerId, 'edit']" data-testid="customer-edit">Edit<span class="visually-hidden"> {{ customer.fullName }}</span></a>
+                <span class="action-links">
+                  <a class="table-action" [routerLink]="['/customers', customer.customerId]" data-testid="customer-profile">Profile<span class="visually-hidden"> for {{ customer.fullName }}</span></a>
+                  <a class="table-action" [routerLink]="['/customers', customer.customerId, 'edit']" data-testid="customer-edit">Edit<span class="visually-hidden"> {{ customer.fullName }}</span></a>
+                </span>
               </td>
             </tr>
           }

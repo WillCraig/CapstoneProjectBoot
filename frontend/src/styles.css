@@ -109,9 +109,11 @@ dd {
   font: inherit;
 }
 
-.customer-actions {
-  display: flex;
-  flex-wrap: nowrap;
+/* The cell stays a table cell so its row line and height match the other columns.
+   The links sit in their own inline-flex wrapper instead. */
+.customer-actions .action-links {
+  display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
 }
@@ -159,9 +161,22 @@ body > canvas {
   }
 }
 
+/* Three choices sit in one row from tablet up. auto-fit left a 2 + 1 orphan at 768px. */
+@media (min-width: 40.01rem) {
+  .page-card.choices-page .choice-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 40rem) {
   .page-card .choice-grid .choice-card {
     min-height: auto;
+  }
+
+  .profile-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
   }
 
   .page-card > .page-heading,
@@ -228,6 +243,11 @@ body > canvas {
     overflow-wrap: break-word;
   }
 
+  /* The card's own border closes the last field, so drop its row line. */
+  .page-card tr td:last-child {
+    border-bottom: 0;
+  }
+
   .page-card td .status {
     width: fit-content;
     max-width: 100%;
@@ -240,15 +260,5 @@ body > canvas {
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-  }
-
-  .page-card td.customer-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .page-card td.customer-actions::before {
-    margin-inline-end: auto;
   }
 }
