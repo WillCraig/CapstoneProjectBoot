@@ -1,9 +1,9 @@
 # Team roles
 
-- Will Craig: planning, CI/CD, deployment and security
+- Will Craig: planning, merging, CI/CD, deployment and security
 - Keifer Kolar: backend, Kafka and the database
 - Jason McGill: Angular frontend
-- Brandon: TBD
+- Brandon: planning and merging, shared with Will
 
 Every change goes through a PR with one approval from someone else.
 

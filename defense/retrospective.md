@@ -14,7 +14,7 @@ Blameless. The panel is Thu/Fri Oct 22-23, 2026. This is from the repo and the c
 - The class-cluster fixes never landed on `main`. Main still has placeholder hosts. The numeric uid and the in-namespace Kafka are four commits to the side.
 - Nobody on this machine has `~/.kube/config`. The deploy workflow has no runs. We kept writing the happy path while the cluster step waited on an instructor file.
 - Capstone CI can be green in the same minute CodeQL is red. Branch protection does not require either check. A red scan does not stop a merge, and a green scan does not mean the image is clean, because Trivy exits 0.
-- `docs/team-roles.md` still says Brandon's piece is TBD. Speaker and operator are not named. The demo script cannot assign itself.
+- Speaker and operator are not named. The demo script cannot assign itself.
 - We accepted no outbox. The Oct 21 Kafka stop showed a 201 with no `processed_event` row. That is the trade-off we wrote down, and it is still open.
 
 ## Actions
