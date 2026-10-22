@@ -68,6 +68,33 @@ describe('interaction pages', () => {
     expect(fixture.nativeElement.textContent).toContain('Requested address update');
   });
 
+  it('list page deletes a row only after the user confirms', () => {
+    const fixture: ComponentFixture<InteractionListPageComponent> =
+      TestBed.createComponent(InteractionListPageComponent);
+    fixture.detectChanges();
+    const confirm = spyOn(window, 'confirm').and.returnValue(false);
+
+    fixture.componentInstance.remove(sample);
+    expect(confirm).toHaveBeenCalledWith(`Delete "${sample.summary}" for CUS-1001?`);
+    expect(api.delete).not.toHaveBeenCalled();
+
+    confirm.and.returnValue(true);
+    fixture.componentInstance.remove(sample);
+    expect(api.delete).toHaveBeenCalledWith(sample.id);
+  });
+
+  it('detail page keeps the interaction when the delete is not confirmed', () => {
+    const navigate = spyOn(router, 'navigate').and.returnValue(Promise.resolve(true));
+    const fixture = TestBed.createComponent(InteractionDetailPageComponent);
+    fixture.detectChanges();
+    spyOn(window, 'confirm').and.returnValue(false);
+
+    fixture.componentInstance.remove();
+
+    expect(api.delete).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('create page submits the Lab 49 DTO and routes to the created detail', () => {
     const navigate = spyOn(router, 'navigate').and.returnValue(Promise.resolve(true));
     const fixture = TestBed.createComponent(InteractionCreatePageComponent);
@@ -99,7 +126,9 @@ describe('interaction pages', () => {
       summary: 'Updated',
     });
 
+    const confirm = spyOn(window, 'confirm').and.returnValue(true);
     fixture.componentInstance.remove();
+    expect(confirm).toHaveBeenCalledWith('Delete "Updated" for CUS-1001?');
     expect(api.delete).toHaveBeenCalledWith(sample.id);
     expect(navigate).toHaveBeenCalledWith(['/interactions'], {
       queryParams: { customerId: 'CUS-1001' },

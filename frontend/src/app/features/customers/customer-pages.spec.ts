@@ -88,10 +88,27 @@ describe('customer pages', () => {
     expect(api.getById).toHaveBeenCalledWith('CUS-1001');
     expect(fixture.nativeElement.textContent).toContain('Amina Khan');
 
+    const confirm = spyOn(window, 'confirm').and.returnValue(true);
     fixture.componentInstance.close();
+    expect(confirm).toHaveBeenCalledWith('Close Amina Khan (CUS-1001)?');
     expect(api.delete).toHaveBeenCalledWith('CUS-1001');
     expect(celebration.celebrate).toHaveBeenCalledTimes(1);
     expect(navigate).toHaveBeenCalledWith(['/customers']);
+  });
+
+  it('detail page does nothing when the close is not confirmed', async () => {
+    await configure('CUS-1001');
+    router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate').and.returnValue(Promise.resolve(true));
+    const fixture = TestBed.createComponent(CustomerDetailPageComponent);
+    fixture.detectChanges();
+
+    spyOn(window, 'confirm').and.returnValue(false);
+    fixture.componentInstance.close();
+
+    expect(api.delete).not.toHaveBeenCalled();
+    expect(celebration.celebrate).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('detail page shows the error and skips confetti when the close is refused', async () => {
@@ -104,6 +121,7 @@ describe('customer pages', () => {
     const fixture = TestBed.createComponent(CustomerDetailPageComponent);
     fixture.detectChanges();
 
+    spyOn(window, 'confirm').and.returnValue(true);
     fixture.componentInstance.close();
 
     expect(api.delete).toHaveBeenCalledWith('CUS-1001');

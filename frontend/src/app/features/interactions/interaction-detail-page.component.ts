@@ -148,6 +148,7 @@ export class InteractionDetailPageComponent implements OnInit {
   remove(): void {
     const current = this.interaction();
     if (!current) return;
+    if (!window.confirm(`Delete "${current.summary}" for ${current.customerId}?`)) return;
     this.deleting.set(true);
     this.error.set(null);
     this.api.delete(current.id).subscribe({

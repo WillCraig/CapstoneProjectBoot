@@ -101,7 +101,11 @@ test('agent records an interaction for Amina and sees it on her timeline', async
   assert.match(await row.getText(), /NOTE/);
 
   // 5. Clean up: soft-delete it (audit row stays in PostgreSQL by design).
+  // The UI asks before deleting; accept the browser confirm.
   await row.findElement(byTestId('delete-interaction')).click();
+  const prompt = await driver.wait(until.alertIsPresent(), WAIT_MS);
+  assert.match(await prompt.getText(), new RegExp(`Delete "${summary}" for .*CUS-1001`));
+  await prompt.accept();
   await driver.wait(async () => {
     for (const r of await driver.findElements(byTestId('interaction-row'))) {
       if ((await r.getText()).includes(summary)) return false;

@@ -105,6 +105,7 @@ export class CustomerDetailPageComponent implements OnInit {
   close(): void {
     const current = this.customer();
     if (!current) return;
+    if (!window.confirm(`Close ${current.fullName} (${current.customerId})?`)) return;
     this.closing.set(true);
     this.error.set(null);
     this.api.delete(current.customerId).subscribe({

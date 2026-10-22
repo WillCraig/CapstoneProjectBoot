@@ -2,7 +2,7 @@
 
 One automated happy path through the real Angular UI and Spring Boot API:
 sign in as `agent` → land on the home screen → open customer lookup → search
-**Amina** → open **CUS-1001** → record an interaction → see it on her timeline → soft-delete it again (keeps runs repeatable).
+**Amina** → open **CUS-1001** → record an interaction → see it on her timeline → soft-delete it again, accepting the confirm (keeps runs repeatable).
 
 It is **not** part of `ng test` or `mvn test` and not in default CI: it needs a
 running backend, PostgreSQL, Kafka, and a real Chrome.
