@@ -272,6 +272,14 @@ class SecurityIT extends AbstractIntegrationTest {
     mockMvc
         .perform(
             options("/api/v1/customers")
+                .header("Origin", "http://127.0.0.1:4200")
+                .header("Access-Control-Request-Method", "GET")
+                .header("Access-Control-Request-Headers", "authorization"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Access-Control-Allow-Origin", "http://127.0.0.1:4200"));
+    mockMvc
+        .perform(
+            options("/api/v1/customers")
                 .header("Origin", "https://evil.example")
                 .header("Access-Control-Request-Method", "GET"))
         .andExpect(status().isForbidden());
