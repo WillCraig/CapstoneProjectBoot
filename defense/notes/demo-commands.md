@@ -120,7 +120,7 @@ Fake token, expect 401:
 
 ## 8. CI and digests (browser)
 
-https://github.com/WillCraig/CapstoneProjectBoot/actions/runs/39649860445
+https://github.com/WillCraig/CapstoneProjectBoot/actions/runs/39777251733
 Read the two digest lines. Say "checks run on every PR" and "Trivy scans and saves a report".
 
 ## 9. Deploy gap (file)

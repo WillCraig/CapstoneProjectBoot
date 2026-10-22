@@ -75,16 +75,16 @@ Speaker notes: Offer to show the 403 body, not the token. If they ask where vali
 
 ## 7. CI and the digests
 
-- Run 39649860445 on `0235018`, pushed 2026-10-21 2:07 PM ET. Conclusion success.
-- Frontend 43 tests and a prod build. Backend `mvn verify`, 99 tests, Postgres service plus Testcontainers.
+- Run 39777251733 on `ebda5ed`, pushed 2026-10-22 8:18 AM ET. Conclusion success.
+- Frontend 56 tests and a prod build. Backend `mvn verify`, 99 tests, Postgres service plus Testcontainers.
 - Trivy fs and image scans ran with `exit-code` 0.
-- Images: backend `sha256:4329fe9b…1cd3`, frontend `sha256:599a2986…5f72`.
+- Images: backend `sha256:ae571851…581d`, frontend `sha256:fa7e4cf7…0ca1`.
 - JAR sha256 `3b260400cb99…10f7c7` from the package-once job.
-- CodeQL on that same push failed. It is a different workflow.
+- CodeQL on that same push passed. It is a different workflow.
 
 Evidence: E23, E30, E31, E32, E35, E39
 
-Speaker notes: Read the two digests slowly or point at them. Say green CI means tests passed and reports were uploaded. It does not mean Trivy found zero issues. Then say CodeQL is red because code scanning is not enabled, and do not blend that into the green run.
+Speaker notes: Read the two digests slowly or point at them. Say green CI means tests passed and reports were uploaded. It does not mean Trivy found zero issues. CodeQL passes now. It failed until Oct 21 because code scanning was off.
 
 ## 8. Deploy: not run, and the plan
 
@@ -102,7 +102,7 @@ Speaker notes: This is the gap. Do not apologize for a full minute. State it, sh
 
 - No cluster smoke and no rollback.
 - Trivy does not block.
-- CodeQL has no result list.
+- CodeQL passes, but we have not read its alert list.
 - Selenium is local only.
 - PR #23 (confetti) and PR #24 (show password) are open. They are not in this demo.
 - Branch protection requires one review. It does not require the CI jobs.

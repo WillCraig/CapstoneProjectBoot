@@ -4,7 +4,7 @@
 
 1. Stack is running: open http://localhost:4200 (use "localhost", not 127.0.0.1).
 2. Browser: one tab on http://localhost:4200/login, one tab on
-   https://github.com/WillCraig/CapstoneProjectBoot/actions/runs/39649860445
+   https://github.com/WillCraig/CapstoneProjectBoot/actions/runs/39777251733
 3. Terminal at the repo root (`cd ~/TEK/CapstoneProjectBoot` on this laptop), font size bumped up (Cmd + a few times).
    Optional: a second terminal running the backend so the log is visible.
 4. Do Not Disturb on. Close Slack, Messages, Mail.
@@ -49,7 +49,7 @@ Type the agent password when asked (it doesn't show). Press Enter between steps.
 
 | Do | Say |
 |----|-----|
-| Switch to the Actions run tab. Scroll to the digest lines. | "CI on main: 43 frontend tests and 99 backend tests passed, including 17 security tests. Trivy scans and saves a report. The images were pushed and we deploy them by digest, not a rebuild." |
+| Switch to the Actions run tab. Scroll to the digest lines. | "CI on main: 56 frontend tests and 99 backend tests passed, including 17 security tests. CodeQL passes too. Trivy scans and saves a report. The images were pushed and we deploy them by digest, not a rebuild." |
 | Stay there. | "What we haven't done is the deploy to the class cluster. The config is ready on a branch, feature/k3s-class-deploy; the next step is my student namespace, deploy those digests, and smoke test CUS-1001." |
 
 Stop recording (the stop button in the menu bar). Watch it once: no password or token visible, the 403 and "Ravi is still PROSPECT" are readable.

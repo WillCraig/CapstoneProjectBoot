@@ -24,15 +24,15 @@ Say the four lines. Stop. About 60-90 seconds each. If we do not know, say "unkn
 - Practice time (seconds): 75
 
 ### Q: What is the rollback unit?
-- Claim: The pair of registry digests from run 39649860445. Not the git tag alone.
-- Evidence (path/id): E31. Backend `sha256:4329fe9b6c4641f6d90c5864db260a9a712ce19bbf4a8c8229e349e11c5e1cd3`. Frontend `sha256:599a298636df759334c1ddcde9f58b8e1652c270730681f68e6403ccb4c85f72`. `capstone-deploy.yml` rejects anything that is not `sha256:` plus 64 hex chars. Rollback text: `docs/capstone-cicd-runbook.md` (E06).
+- Claim: The pair of registry digests from run 39777251733. Not the git tag alone.
+- Evidence (path/id): E31. Backend `sha256:ae571851d8c74da1d3f279d421a3576b9d9e4520523a1411b4a48f3e55c9581d`. Frontend `sha256:fa7e4cf7c53c36b83a867709ad8f72e2d983312c2e255c905fbe634f029a0ca1`. `capstone-deploy.yml` rejects anything that is not `sha256:` plus 64 hex chars. Rollback text: `docs/capstone-cicd-runbook.md` (E06).
 - Trade-off: Tags are easy to say and easy to move. The digest is the bytes we scanned.
 - Next step / residual risk: Nothing has been rolled back. You need two deploys before `kubectl rollout undo` has a previous ReplicaSet. Migrations V1-V3 are additive, so an older app image should still match the schema. That was not tried on a cluster.
 - Practice time (seconds): 70
 
 ### Q: Which NFR is not met?
 - Claim: Rollback within 10 minutes is not met, because we have not deployed. A few others are met on a laptop or in CI only.
-- Evidence (path/id): `docs/nfrs.md` (E07). 401/403: `SecurityIT` and the live probes (E05). 15 minute tokens: `application.yml` and `expiresIn` 900. PR time: run 39649860445 went from 18:07:22Z to 18:11:53Z, under 10 minutes (E23). "No secrets in git" is the policy plus Trivy secret scan, not a proof I re-ran today.
+- Evidence (path/id): `docs/nfrs.md` (E07). 401/403: `SecurityIT` and the live probes (E05). 15 minute tokens: `application.yml` and `expiresIn` 900. PR time: run 39777251733 went from 12:18:22Z to 12:21:47Z (8:18 to 8:21 AM ET), under 10 minutes (E23). "No secrets in git" is the policy plus Trivy secret scan, not a proof I re-ran today.
 - Trade-off: Writing the target down was the Lab 48 point. Leaving the unmet one visible is the Lab 52 point.
 - Next step / residual risk: One real deploy, then time a rollback. Until then the NFR stays open.
 - Practice time (seconds): 65
@@ -65,16 +65,16 @@ Say the four lines. Stop. About 60-90 seconds each. If we do not know, say "unkn
 - Next step / residual risk: Checkout `feature/k3s-class-deploy`, create the two Secrets, dry-run `scripts/deploy-class.sh`, then deploy and smoke. Owner: deploy role. Blocked on the instructor file.
 - Practice time (seconds): 80
 
-### Q: Why does CodeQL fail?
-- Claim: The workflow runs, then upload fails because code scanning is not enabled. It is not a compile error in our Java.
-- Evidence (path/id): `.github/workflows/codeql.yml` (E35). Run 39649860453 failed on the same push that made Capstone CI green. Run 39670104483 (PR #24) logged `Code scanning is not enabled for this repository.` `gh repo view` later the same day said the repo is PUBLIC. We did not look up when it became public, and we did not turn code scanning on.
-- Trade-off: Leaving the workflow in place makes a red X on every PR. Turning the upload off would hide the gap. Deleting the check from branch protection does nothing today, because status checks are not required (E34).
-- Next step / residual risk: Try enabling code scanning and save one green run. If GitHub still refuses, disable the workflow and say Trivy plus tests are what we have. Do not claim a SAST finding list we never downloaded.
+### Q: Does CodeQL pass?
+- Claim: Yes, now. It used to fail at the upload step because code scanning was not enabled. It was never a compile error in our Java.
+- Evidence (path/id): `.github/workflows/codeql.yml` (E35). Up to Oct 21 2:25 PM ET it failed with `Code scanning is not enabled for this repository.` (run 39670104483). Every CodeQL run since the PR #23/#24 merges passes. Run 39777251809 on `ebda5ed` logged `Successfully uploaded results`.
+- Trade-off: A green check means the scan ran and uploaded. It does not mean zero findings.
+- Next step / residual risk: Read the alert list in the Security tab before claiming anything about findings. We have not reviewed it.
 - Practice time (seconds): 80
 
 ### Q: What does Trivy block?
 - Claim: Nothing, right now. It writes a HIGH/CRITICAL report and exits 0.
-- Evidence (path/id): `exit-code: "0"` on the fs scan and both image scans in `.github/workflows/capstone-ci.yml` (E30, E39). The security job on run 39649860445 succeeded. The runbook's 2026-10-20 local count was 44 fixable highs/criticals on the backend image and 53 on the frontend. We did not re-count that today.
+- Evidence (path/id): `exit-code: "0"` on the fs scan and both image scans in `.github/workflows/capstone-ci.yml` (E30, E39). The security job on run 39777251733 succeeded. The runbook's 2026-10-20 local count was 44 fixable highs/criticals on the backend image and 53 on the frontend. We did not re-count that today.
 - Trade-off: Failing the build on that baseline would have blocked every PR before an upgrade. A green run means "the scan ran," not "the image is clean."
 - Next step / residual risk: Bump Spring Boot 3.3.5 and the base images, retest, then set the image scan `exit-code` to 1. Until then, say the residual risk the way the runbook does.
 - Practice time (seconds): 70
@@ -110,6 +110,6 @@ Say the four lines. Stop. About 60-90 seconds each. If we do not know, say "unkn
 ### Q: Do the CI checks block a merge?
 - Claim: Not as required status checks. A review does.
 - Evidence (path/id): E34. Branch protection on `main`: one approving review, stale reviews dismissed, last push needs approval. `required_status_checks` is null. The runbook's list of required check names is a plan. Two of those names are not the job names in the YAML: the run showed `frontend` and `backend`, while the runbook says `Frontend (Angular)` and `Backend (Maven)`. The Trivy and image job names do match.
-- Trade-off: A red CodeQL check did not stop PR #22. Capstone CI was green on that merge anyway.
-- Next step / residual risk: After the panel, require the four Capstone CI job names. Leave CodeQL off that list until it can pass.
+- Trade-off: A red CodeQL check did not stop PR #22. Capstone CI was green on that merge anyway. CodeQL passes now, but nothing makes it required.
+- Next step / residual risk: After the panel, require the Capstone CI job names, and CodeQL with them.
 - Practice time (seconds): 60

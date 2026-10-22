@@ -24,7 +24,7 @@ Checked 2026-10-21. Evidence IDs are in `defense/evidence-index.md`.
 | Architecture and the ADRs | E01, E10, E11, E12 | Can explain from the docs. OpenShift vs k3s is still an open question. |
 | Backend, messaging, UI, Postgres | E03, E04, E29 | Can walk the code and the SQL. Cluster path not shown. |
 | Automated tests | E22, E23, E24 | 99 backend, 43 frontend, local and on run 39649860445. |
-| Security scan | E35, E39 | Trivy ran and did not fail the build. CodeQL failed. We do not have a finding list. |
+| Security scan | E35, E39 | Trivy ran and did not fail the build. CodeQL passes now (run 39777251809). We have not read its finding list. |
 | GitHub Actions and OpenShift | E23, E31, E33 | Actions and digests yes. OpenShift no. k3s deploy no. |
 | Risks, limits, AI | E08, E14, retro | Risks are short and named. AI plan is a page, not a close-out of what each person used. |
 | Q&A with evidence | `defense/technical-q-and-a.md` | Written. Not rehearsed out loud. |
