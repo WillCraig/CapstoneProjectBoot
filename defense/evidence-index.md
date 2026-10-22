@@ -29,7 +29,7 @@ There is no `docs/architecture/` directory. E01 is the single architecture file 
 | E10 | Events after commit, no outbox | `docs/adrs/001-event-contract.md` | 48 | Y |
 | E11 | PostgreSQL 16, Flyway, not Oracle | `docs/adrs/002-postgresql.md`, migrations `V1` `V2` `V3` under `backend/src/main/resources/db/migration/` | 48 | Y |
 | E12 | Build once, deploy digests | `docs/adrs/003-github-actions-digest-promotion.md` | 48 | Y |
-| E13 | Team roles | `docs/team-roles.md`. Brandon's piece is still "TBD" in that file | 48 | Y |
+| E13 | Team roles | `docs/team-roles.md`. Brandon shares planning and merging with Will | 48 | Y |
 | E14 | AI usage plan | `docs/ai-usage-plan.md`. The "Must verify" boxes are still unchecked | 48 | Y |
 | E15 | Four environments, approvals | `docs/environment-strategy.md`. Namespaces are placeholders | 48 | Y |
 | E16 | Lab 48 index | `docs/lab48/README.md` | 48 | Y |
@@ -94,5 +94,4 @@ We will not say these are done:
 - Confetti and show-password are merged (E40) but are not demo beats.
 - `final-presentation.pdf`. Not in the repo. Slides come from the outline.
 - A rehearsed demo or a fallback video. Script only.
-- Brandon's scope. `docs/team-roles.md` still says TBD.
 - Speaker and operator. Not named in the repo.

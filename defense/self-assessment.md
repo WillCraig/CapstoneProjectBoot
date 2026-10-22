@@ -14,7 +14,7 @@ Checked 2026-10-21. Evidence IDs are in `defense/evidence-index.md`.
 | Lab 51: security, Actions, digest, deploy, smoke, rollback | E05, E17-E21, E23, E31, E33, E06 | Security and CI digests shown. Deploy, cluster smoke, and rollback not shown. |
 | Lab 52 packet | This folder | Script, index, Q&A, retro, self-assessment, and outline are in git. No PDF. No panel yet (`defense/feedback-log.md`). |
 | No secrets in the packet | Scrub before commit. Local key stays in `application-local.yml`, which this folder does not quote. | We grepped `defense/` before committing. |
-| Limitations have owners | E08, `defense/retrospective.md`, `defense/notes/deployment-gap.md` | Deploy, CodeQL, and Trivy have a role and a measure. Brandon's scope and the speaker names are still "Team to confirm". |
+| Limitations have owners | E08, `defense/retrospective.md`, `defense/notes/deployment-gap.md` | Deploy, CodeQL, and Trivy have a role and a measure. The speaker names are still "Team to confirm". |
 
 ## What the panel may ask to see
 
