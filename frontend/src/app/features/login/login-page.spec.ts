@@ -60,4 +60,32 @@ describe('LoginPageComponent', () => {
       '<img src=x onerror=alert(1)>',
     );
   });
+
+  it('toggles password visibility without submitting the form', () => {
+    const fixture = TestBed.createComponent(LoginPageComponent);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const input = el.querySelector<HTMLInputElement>('[data-testid="login-password"]')!;
+    const toggle = el.querySelector<HTMLButtonElement>('[data-testid="login-password-toggle"]')!;
+
+    expect(toggle.type).toBe('button');
+    expect(input.type).toBe('password');
+    expect(toggle.getAttribute('aria-label')).toBe('Show password');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-controls')).toBe('login-password');
+
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(input.type).toBe('text');
+    expect(toggle.getAttribute('aria-label')).toBe('Hide password');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(auth.login).not.toHaveBeenCalled();
+
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(input.type).toBe('password');
+    expect(toggle.getAttribute('aria-label')).toBe('Show password');
+  });
 });

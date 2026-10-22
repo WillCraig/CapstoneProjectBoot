@@ -9,7 +9,7 @@
 // (port 4300, proxies /api to CRM_E2E_API_TARGET). See e2e/README.md.
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
-import { Builder, By, until } from 'selenium-webdriver';
+import { Builder, By, error, until } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
 
 const BASE_URL = (process.env.CRM_E2E_BASE_URL ?? 'http://localhost:4300').replace(/\/$/, '');
@@ -43,13 +43,19 @@ async function visible(testId) {
 async function rowContaining(testId, text) {
   let match;
   await driver.wait(async () => {
-    for (const row of await driver.findElements(byTestId(testId))) {
-      if ((await row.getText()).includes(text)) {
-        match = row;
-        return true;
+    try {
+      for (const row of await driver.findElements(byTestId(testId))) {
+        if ((await row.getText()).includes(text)) {
+          match = row;
+          return true;
+        }
       }
+      return false;
+    } catch (err) {
+      // Search replaces the table while this wait is reading it.
+      if (err instanceof error.StaleElementReferenceError) return false;
+      throw err;
     }
-    return false;
   }, WAIT_MS, `no [data-testid=${testId}] containing "${text}"`);
   return match;
 }

@@ -2,31 +2,38 @@
   <div class="page-heading">
     <div>
       <p class="eyebrow">Customer directory</p>
-      <h2>Look up a customer</h2>
+      <h1 tabindex="-1">Look up a customer</h1>
     </div>
     <a class="back-button" routerLink="/customers/new" data-testid="new-customer">New customer</a>
   </div>
 
   <form class="filters customer-search" (ngSubmit)="reload()">
     <label for="customer-search">Search by name or customer ID</label>
-    <input id="customer-search" name="query" [(ngModel)]="query" data-testid="customer-search" />
+    <input
+      id="customer-search"
+      name="query"
+      [(ngModel)]="query"
+      [attr.aria-invalid]="error() ? true : null"
+      [attr.aria-describedby]="error() ? 'customer-list-error' : null"
+      data-testid="customer-search"
+    />
     <button type="submit" data-testid="search-customers" [disabled]="loading()">Search</button>
-    <span class="record-count">{{ visibleCustomers().length }} customers</span>
+    <span class="record-count" [attr.role]="loading() ? null : 'status'">{{ visibleCustomers().length }} customers</span>
   </form>
 
   <div class="filters">
-    <label>
+    <label for="customer-status-filter">
       Customer status
-      <select [ngModel]="statusFilter()" (ngModelChange)="updateStatusFilter($event)" name="status" data-testid="status-filter">
+      <select id="customer-status-filter" [ngModel]="statusFilter()" (ngModelChange)="updateStatusFilter($event)" name="status" data-testid="status-filter">
         <option value="ALL">All statuses</option>
         <option value="PROSPECT">Prospect</option>
         <option value="ACTIVE">Active</option>
         <option value="CLOSED">Closed</option>
       </select>
     </label>
-    <label>
+    <label for="customer-id-order">
       Customer ID order
-      <select [ngModel]="sortDirection()" (ngModelChange)="updateSortDirection($event)" name="sort" data-testid="sort-direction">
+      <select id="customer-id-order" [ngModel]="sortDirection()" (ngModelChange)="updateSortDirection($event)" name="sort" data-testid="sort-direction">
         <option value="asc">Ascending</option>
         <option value="desc">Descending</option>
       </select>
@@ -34,31 +41,32 @@
   </div>
 
   @if (error()) {
-    <p class="error" role="alert" data-testid="list-error">{{ error() }}</p>
+    <p id="customer-list-error" class="error" role="alert" data-testid="list-error">{{ error() }}</p>
   } @else if (loading()) {
-    <p class="empty-state" role="status">Loading customers…</p>
+    <p class="empty-state">Loading customers…</p>
   } @else if (visibleCustomers().length === 0) {
     <p class="empty-state" data-testid="empty-state">No customers match this search and status.</p>
   } @else {
     <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Customer ID</th>
-            <th scope="col">Customer name</th>
-            <th scope="col">Status</th>
-            <th scope="col">Actions</th>
+      <table role="table">
+        <caption class="visually-hidden">Customers</caption>
+        <thead role="rowgroup">
+          <tr role="row">
+            <th scope="col" role="columnheader">Customer ID</th>
+            <th scope="col" role="columnheader">Customer name</th>
+            <th scope="col" role="columnheader">Status</th>
+            <th scope="col" role="columnheader">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
           @for (customer of visibleCustomers(); track customer.customerId) {
-            <tr data-testid="customer-row">
-              <td><code>{{ customer.customerId }}</code></td>
-              <td>{{ customer.fullName }}</td>
-              <td><span class="status" [class]="'status status-' + customer.status.toLowerCase()">{{ customer.status }}</span></td>
-              <td class="customer-actions">
-                <a class="table-action" [routerLink]="['/customers', customer.customerId]" data-testid="customer-profile">Profile</a>
-                <a class="table-action" [routerLink]="['/customers', customer.customerId, 'edit']" data-testid="customer-edit">Edit</a>
+            <tr role="row" data-testid="customer-row">
+              <td role="cell" data-label="Customer ID"><code>{{ customer.customerId }}</code></td>
+              <td role="cell" data-label="Customer name">{{ customer.fullName }}</td>
+              <td role="cell" data-label="Status"><span class="status" [class]="'status status-' + customer.status.toLowerCase()">{{ customer.status }}</span></td>
+              <td role="cell" class="customer-actions" data-label="Actions">
+                <a class="table-action" [routerLink]="['/customers', customer.customerId]" data-testid="customer-profile">Profile<span class="visually-hidden"> for {{ customer.fullName }}</span></a>
+                <a class="table-action" [routerLink]="['/customers', customer.customerId, 'edit']" data-testid="customer-edit">Edit<span class="visually-hidden"> {{ customer.fullName }}</span></a>
               </td>
             </tr>
           }

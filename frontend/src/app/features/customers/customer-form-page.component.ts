@@ -19,24 +19,20 @@ import { CustomerStatus } from './customer.model';
   template: `
     <section class="page-card manage-page">
       <p class="eyebrow">Customer maintenance</p>
-      <h2>{{ customerId ? 'Update customer' : 'Create new customer' }}</h2>
+      <h1 tabindex="-1">{{ customerId ? 'Update customer' : 'Create new customer' }}</h1>
 
       @if (error()) {
-        <p class="error" role="alert" data-testid="form-error">{{ error() }}</p>
+        <p id="customer-form-error" class="error" role="alert" data-testid="form-error">{{ error() }}</p>
       }
 
       @if (loading()) {
-        <p class="empty-state" role="status">Loading customer…</p>
+        <p class="empty-state">Loading customer…</p>
       } @else {
         <form class="customer-form" (ngSubmit)="save()">
           <label for="public-id">Public ID</label>
-          <input
-            id="public-id"
-            name="publicId"
-            [value]="customerId || 'Assigned automatically when created'"
-            readonly
-            aria-describedby="public-id-help"
-          />
+          <p id="public-id" class="readonly-value" aria-describedby="public-id-help">
+            {{ customerId || 'Assigned automatically when created' }}
+          </p>
           <span id="public-id-help" class="field-help">
             This ID is assigned by the system and cannot be changed.
           </span>
@@ -50,11 +46,20 @@ import { CustomerStatus } from './customer.model';
             maxlength="200"
             autocomplete="name"
             placeholder="Enter customer's full name"
+            [attr.aria-invalid]="error() ? true : null"
+            [attr.aria-describedby]="error() ? 'customer-form-error' : null"
             data-testid="customer-name"
           />
 
           <label for="status">Customer status</label>
-          <select id="status" name="status" [(ngModel)]="status" data-testid="customer-status">
+          <select
+            id="status"
+            name="status"
+            [(ngModel)]="status"
+            [attr.aria-invalid]="error() ? true : null"
+            [attr.aria-describedby]="error() ? 'customer-form-error' : null"
+            data-testid="customer-status"
+          >
             @for (option of statusOptions; track option) {
               <option [value]="option">{{ option }}</option>
             }

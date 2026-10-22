@@ -1,25 +1,63 @@
 header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem max(1.25rem, calc((100% - 1100px) / 2));
+  gap: 0.75rem 1.25rem;
+  padding: 0.75rem max(var(--page-gutter), calc((100% - 1100px) / 2));
   border-bottom: 1px solid #dce3ec;
   background: #fff;
 }
 
 .brand {
+  flex: 0 0 auto;
   color: #142b49;
   font-size: 1.15rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+header nav,
+header nav ul {
+  display: flex;
+  flex: 1 1 28rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem 1rem;
+  min-width: min(100%, 18rem);
+}
+
+header nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  background: #142b49;
+  color: #fff;
   font-weight: 700;
   text-decoration: none;
 }
 
-header nav {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
+.skip-link:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  border: 0;
+  white-space: nowrap;
 }
 
 header nav a {
@@ -28,8 +66,12 @@ header nav a {
   text-decoration: none;
 }
 
+header nav span {
+  overflow-wrap: anywhere;
+}
+
 main {
-  padding: 0 1.25rem;
+  padding-inline: var(--page-gutter);
 }
 
 button {
@@ -45,4 +87,27 @@ button {
 
 button:hover {
   background: #f3f6fa;
+}
+
+@media (max-width: 64rem) {
+  header {
+    align-items: flex-start;
+  }
+
+  .brand,
+  header nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+  }
+
+  header nav a {
+    padding-inline: 0.2rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  header nav {
+    justify-content: flex-start;
+  }
 }

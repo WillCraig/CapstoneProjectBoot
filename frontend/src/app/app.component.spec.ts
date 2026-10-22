@@ -25,6 +25,10 @@ describe('AppComponent header', () => {
 
     expect(fixture.nativeElement.querySelector('nav')).toBeNull();
     expect(fixture.nativeElement.querySelector('.brand').textContent).toContain('Northstar CRM');
+    expect(fixture.nativeElement.querySelector('.skip-link')?.getAttribute('href')).toBe('#main-content');
+    const main = fixture.nativeElement.querySelector('main');
+    expect(main?.id).toBe('main-content');
+    expect(main?.getAttribute('tabindex')).toBe('-1');
   });
 
   it('shows the main links and logs out to /login', () => {
@@ -36,6 +40,7 @@ describe('AppComponent header', () => {
 
     const links = Array.from(el.querySelectorAll('nav a')).map((a) => a.textContent?.trim());
     expect(links).toEqual(['Customers', 'New customer', 'Interactions', 'New interaction']);
+    expect(el.querySelector('nav')?.getAttribute('aria-label')).toBe('Primary');
     expect(el.querySelector('[data-testid="signed-in-user"]')?.textContent).toContain('agent (AGENT)');
 
     (el.querySelector('[data-testid="logout"]') as HTMLButtonElement).click();
